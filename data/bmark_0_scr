@@ -1,0 +1,13 @@
+mcmc_para_base::mcmc_init(): Prefix is: ../data/bmark
+mcmc_para_base::mcmc(): Stepper RW, n_params=154, n_threads=1, rank=0, n_ranks=1
+Set start time to: 1.383612e+00
+mcmc: Thread 0 setting data at row 0
+  func_ret: 0 mcmc_accept: 1 walker_ix: 0 store_rejects: 1
+mcmc: 4.6138e+01  (initial)
+Iteration: 0 of 1 thread 0 accept: 0 0
+mcmc: Updating mult of row 0 from 1.000000e+00 to 2.000000e+00
+Incrementing mcmc_iters.
+o2scl::mcmc_para: Thread 0 stopping because number of iterations (1) equal to max_iters (1).
+mcmc: Start write_files(). mpi_rank: 0 mpi_size: 1 table_io_chunk: 1
+mcmc: Done write_files().
+mcmc (0,0): accept=0 reject=1
