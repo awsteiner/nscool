@@ -17,16 +17,15 @@ data_eval::data_eval() : nw("./") {
   // Tell the nuclear structure object which EOS to use
   rn2.set_eos(rmf);
 
-  // Tell the cooling code to use parameterized gaps instead of
-  // internal gap functions
+  // Tell the cooling code to use parameterized gaps instead of internal gap
+  // functions
 
   nw.sfn1s0=1;
   nw.sfp1s0=150;
   nw.sfn3p2=150;
   nw.ptemp=1.0;
 
-  // Tell the neutron star object which EOS to use and
-  // A few other settings
+  // Tell the neutron star object which EOS to use and A few other settings
   nst.include_muons=true;
   nst.def_tov.calc_gpot=true;
 
@@ -99,8 +98,7 @@ data_eval::data_eval() : nw("./") {
   rn2.err_nonconv=false;
   rn2.generic_ode=true;
 
-  // This initial value doesn't matter because it is set by
-  // the MCMC function 
+  // This initial value doesn't matter because it is set by the MCMC function 
   verbose=1;
 
   // Delta mass is 0.024
@@ -124,8 +122,10 @@ data_eval::data_eval() : nw("./") {
   no_nuclei=false;
   no_ins=false;
   no_sxrt=false;
+  no_qlmxb=false;
+  no_ligo=false;
   debug_ins=false;
-
+  
   flag_emu_aws=false;
 }
 
@@ -246,9 +246,8 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
   MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
   MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
   //if (mpi_rank==0) {
-    //cout << "System free:" << endl;
-    //int sys_ret=system("free");
-    //cout << "System done." << endl;
+    //cout << "System free:" << endl; int sys_ret=system("free"); cout <<
+    //"System done." << endl;
   //}
 #endif
   
@@ -375,8 +374,7 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
   }
   
   // --------------------------------------------------------------
-  // Nuclei
-  // Record start time
+  // Nuclei Record start time
 
   double L_Pb208=0.0, L_Ca40=0.0, L_Zr90=0.0;
   int nuc_ret;
@@ -432,12 +430,16 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
     L_Pb208=exp(-((rn.etot+7.87)*(rn.etot+7.87))
                 /(2.0*0.16*0.16))*
       exp(-((rn.r_charge-5.50)*
-            (rn.r_charge-5.50))/(2.0*0.12*0.12))*
-      exp(-((rn.rnrp-0.283)*
-            (rn.rnrp-0.283))/(2.0*0.071*0.071));
-    
-    dat[dvi["lw_prex"]]=-((rn.rnrp-0.283)*
+            (rn.r_charge-5.50))/(2.0*0.12*0.12));
+
+    if (!no_prex) {
+      L_Pb208*=exp(-((rn.rnrp-0.283)*
+      (rn.rnrp-0.283))/(2.0*0.071*0.071));
+      dat[dvi["lw_prex"]]=-((rn.rnrp-0.283)*
                           (rn.rnrp-0.283))/(2.0*0.071*0.071);
+    } else {
+      dat[dvi["lw_prex"]]=0.0;
+    }
     dat[dvi["lw_nuc"]]=-((rn.etot+7.87)*(rn.etot+7.87))
       /(2.0*0.16*0.16)-((rn.r_charge-5.50)*
                         (rn.r_charge-5.50))/(2.0*0.12*0.12);
@@ -679,10 +681,8 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
                 << te->interp("nb",nb_grid[i],"np") << " "
                 << te->interp("nb",nb_grid[i],"np")/nb_grid[i]
                 << std::endl;
-      //std::cout << dat[dvi[((string)"Esym_")+o2scl::szttos(i)]]
-      //<< std::endl;
-      //std::cout << dat[dvi[((string)"Esym2_")+o2scl::szttos(i)]]
-      //<< std::endl;
+      //std::cout << dat[dvi[((string)"Esym_")+o2scl::szttos(i)]] << std::endl;
+      //std::cout << dat[dvi[((string)"Esym2_")+o2scl::szttos(i)]] << std::endl;
     }
   }
   //exit(-1);
@@ -735,9 +735,7 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
   
   nst.def_eos_tov.err_nonconv=false;
   int cn_ret=0;
-  //nst.verbose=2;
-  //nst.def_eos_tov.err_nonconv=true;
-  //nst.def_eos_tov.verbose=1;
+  //nst.verbose=2; nst.def_eos_tov.err_nonconv=true; nst.def_eos_tov.verbose=1;
   //nst.err_nonconv=true;
   nst.def_tov.ang_vel=true;
   cn_ret=nst.calc_nstar();
@@ -836,8 +834,8 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
     return 1;
   }
   
-  // Compute radius, central baryon density, and
-  // central energy density of maximum mass star
+  // Compute radius, central baryon density, and central energy density of
+  // maximum mass star
   dat[dvi["Rns_max"]]=tmvsr.get("r",max_row);
   dat[dvi["nb_max"]]=tmvsr.get("nb",max_row);
   dat[dvi["e_max"]]=tmvsr.get("ed",max_row);
@@ -936,131 +934,134 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
   // --------------------------------------------------------------
   // Compute ligo probability
 
-  // We linearly interpolate the log of the probability instead of
-  // taking the log of the probability since the latter may lead to
-  // a negative probability.
-  
-  if (ligo_data.get_rank()==0) {
-    o2scl_hdf::hdf_file hfx;
-    hfx.open("../ligo/gw170817_kde.o2");
-    std::string name="kde_log_prob";
-    o2scl_hdf::hdf_input(hfx,ligo_data,name);
-    hfx.close();
-  }
-  
-  dat[dvi["ligo_fail"]]=0.0;
-  
-  // If the point is outside of the range specified
-  // in the data file, reject it so that we don't do
-  // anomalous extrapolations
-  if (pars[pvi["M_chirp"]]<ligo_data.get_grid(0,0) ||
-      pars[pvi["M_chirp"]]>ligo_data.get_grid(0,ligo_data.get_size(0)-1)) {
-    dat[dvi["ligo_fail"]]=1.0;
-    if (verbose>0) {
-      cout.precision(10);
-      cout << "low,M_chirp,high: " << ligo_data.get_grid(0,0) << " "
-           << pars[pvi["M_chirp"]] << " "
-           << ligo_data.get_grid(0,ligo_data.get_size(0)-1) << endl;
-      cout.precision(6);
-      cout << "M_chirp out of LIGO data file range." << endl;
-    }
-    if (err_as_small_wgt) {
-      log_weight=-854.0;
-      //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
-      return 0;
-    }
-    return 16;
-  }
-  if (pars[pvi["q"]]<ligo_data.get_grid(1,0) ||
-      pars[pvi["q"]]>ligo_data.get_grid(1,ligo_data.get_size(1)-1)) {
-    dat[dvi["ligo_fail"]]=1.0;
-    if (verbose>0) {
-      cout.precision(10);
-      cout << "low,q,high: " << ligo_data.get_grid(1,0) << " "
-           << pars[pvi["q"]] << " "
-           << ligo_data.get_grid(1,ligo_data.get_size(1)-1) << endl;
-      cout.precision(6);
-      cout << "q out of LIGO data file range." << endl;
-    }
-    if (err_as_small_wgt) {
-      log_weight=-855.0;
-      //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
-      return 0;
-    }
-    return 16;
-  }
+  // We linearly interpolate the log of the probability instead of taking the
+  // log of the probability since the latter may lead to a negative probability.
 
-    double M_chirp=pars[pvi["M_chirp"]];
-    double q=pars[pvi["q"]];
-    double m1=M_chirp*pow(1.0+q,0.2)/pow(q,0.6);
-    double m2=M_chirp*pow(q,0.4)*pow(1.0+q,0.2);
-    
-    // I's in Msun*km^2
-    double I1=tmvsr.interp("gm",m1,"rjw")/3.0/schwarz_km;
-    double I2=tmvsr.interp("gm",m2,"rjw")/3.0/schwarz_km;
-    // To compute I_bar, divide by G^2*M^3
-    double G=schwarz_km/2.0;
-    double I_bar1=I1/G/G/m1/m1/m1;
-    double I_bar2=I2/G/G/m2/m2/m2;
+  if (!no_ligo) {
+    if (ligo_data.get_rank()==0) {
+      o2scl_hdf::hdf_file hfx;
+      hfx.open("../ligo/gw170817_kde.o2");
+      std::string name="kde_log_prob";
+      o2scl_hdf::hdf_input(hfx,ligo_data,name);
+      hfx.close();
+    }
 
-    // Jim's fit from Steiner, Lattimer, and Brown (2016)
-    double b0=-30.5395;
-    double b1=38.3931;
-    double b2=-16.3071;
-    double b3=3.36972;
-    double b4=-0.26105;
+    dat[dvi["ligo_fail"]]=0.0;
+
+    // If the point is outside of the range specified in the data file, reject
+    // it so that we don't do anomalous extrapolations
+    if (pars[pvi["M_chirp"]]<ligo_data.get_grid(0,0) ||
+        pars[pvi["M_chirp"]]>ligo_data.get_grid(0,ligo_data.get_size(0)-1)) {
+      dat[dvi["ligo_fail"]]=1.0;
+      if (verbose>0) {
+        cout.precision(10);
+        cout << "low,M_chirp,high: " << ligo_data.get_grid(0,0) << " "
+             << pars[pvi["M_chirp"]] << " "
+             << ligo_data.get_grid(0,ligo_data.get_size(0)-1) << endl;
+        cout.precision(6);
+        cout << "M_chirp out of LIGO data file range." << endl;
+      }
+      if (err_as_small_wgt) {
+        log_weight=-854.0;
+        //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
+        return 0;
+      }
+      return 16;
+    }
+    if (pars[pvi["q"]]<ligo_data.get_grid(1,0) ||
+        pars[pvi["q"]]>ligo_data.get_grid(1,ligo_data.get_size(1)-1)) {
+      dat[dvi["ligo_fail"]]=1.0;
+      if (verbose>0) {
+        cout.precision(10);
+        cout << "low,q,high: " << ligo_data.get_grid(1,0) << " "
+             << pars[pvi["q"]] << " "
+             << ligo_data.get_grid(1,ligo_data.get_size(1)-1) << endl;
+        cout.precision(6);
+        cout << "q out of LIGO data file range." << endl;
+      }
+      if (err_as_small_wgt) {
+        log_weight=-855.0;
+        //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
+        return 0;
+      }
+      return 16;
+    }
+
+      double M_chirp=pars[pvi["M_chirp"]];
+      double q=pars[pvi["q"]];
+      double m1=M_chirp*pow(1.0+q,0.2)/pow(q,0.6);
+      double m2=M_chirp*pow(q,0.4)*pow(1.0+q,0.2);
+
+      // I's in Msun*km^2
+      double I1=tmvsr.interp("gm",m1,"rjw")/3.0/schwarz_km;
+      double I2=tmvsr.interp("gm",m2,"rjw")/3.0/schwarz_km;
+      // To compute I_bar, divide by G^2*M^3
+      double G=schwarz_km/2.0;
+      double I_bar1=I1/G/G/m1/m1/m1;
+      double I_bar2=I2/G/G/m2/m2/m2;
+
+      // Jim's fit from Steiner, Lattimer, and Brown (2016)
+      double b0=-30.5395;
+      double b1=38.3931;
+      double b2=-16.3071;
+      double b3=3.36972;
+      double b4=-0.26105;
+
+      double li=log(I_bar1);
+      double li2=li*li;
+      double li3=li*li2;
+      double li4=li*li3;
+      double li5=li*li4;
+      double li6=li*li5;
+
+      double Lambda1=exp(b0+b1*li+b2*li2+b3*li3+b4*li4);
+
+      li=log(I_bar2);
+      li2=li*li;
+      li3=li*li2;
+      li4=li*li3;
+      li5=li*li4;
+      li6=li*li5;
+      double Lambda2=exp(b0+b1*li+b2*li2+b3*li3+b4*li4);
+
+      double Lambdat=16.0/13.0*((m1+12.0*m2)*pow(m1,4.0)*Lambda1+
+                                (m2+12.0*m1)*pow(m2,4.0)*Lambda2)/
+        pow(m1+m2,5.0);
+      cout << "Lambdat: " << Lambdat << endl;
+      //exit(-1);
+
+    if (Lambdat<ligo_data.get_grid(2,0) ||
+        Lambdat>ligo_data.get_grid(2,ligo_data.get_size(2)-1)) {
+      dat[dvi["ligo_fail"]]=1.0;
+      if (verbose>0) {
+        cout.precision(10);
+        cout << "low,Lambdat,high: " << ligo_data.get_grid(2,0) << " "
+             << Lambdat << " "
+             << ligo_data.get_grid(2,ligo_data.get_size(2)-1) << endl;
+        cout.precision(6);
+        cout << "Lambdat out of LIGO data file range." << endl;
+      }
+      if (err_as_small_wgt) {
+        log_weight=-856.0;
+        //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
+        return 0;
+      }
+      return 16;
+    }
+    double lw_ligo=ligo_data.interp_linear(pars[pvi["M_chirp"]],
+                                           pars[pvi["q"]],
+                                           Lambdat);
+    log_weight+=lw_ligo;
+    dat[dvi["Lambdat"]]=Lambdat;
+    dat[dvi["lw_ligo"]]=lw_ligo;
     
-    double li=log(I_bar1);
-    double li2=li*li;
-    double li3=li*li2;
-    double li4=li*li3;
-    double li5=li*li4;
-    double li6=li*li5;
-    
-    double Lambda1=exp(b0+b1*li+b2*li2+b3*li3+b4*li4);
-    
-    li=log(I_bar2);
-    li2=li*li;
-    li3=li*li2;
-    li4=li*li3;
-    li5=li*li4;
-    li6=li*li5;
-    double Lambda2=exp(b0+b1*li+b2*li2+b3*li3+b4*li4);
-    
-    double Lambdat=16.0/13.0*((m1+12.0*m2)*pow(m1,4.0)*Lambda1+
-                              (m2+12.0*m1)*pow(m2,4.0)*Lambda2)/
-      pow(m1+m2,5.0);
-    cout << "Lambdat: " << Lambdat << endl;
-    //exit(-1);
-   
-  if (Lambdat<ligo_data.get_grid(2,0) ||
-      Lambdat>ligo_data.get_grid(2,ligo_data.get_size(2)-1)) {
-    dat[dvi["ligo_fail"]]=1.0;
     if (verbose>0) {
-      cout.precision(10);
-      cout << "low,Lambdat,high: " << ligo_data.get_grid(2,0) << " "
-           << Lambdat << " "
-           << ligo_data.get_grid(2,ligo_data.get_size(2)-1) << endl;
-      cout.precision(6);
-      cout << "Lambdat out of LIGO data file range." << endl;
+      cout << "log weight from LIGO, log weight after: "
+           << lw_ligo << " " << log_weight << endl;
     }
-    if (err_as_small_wgt) {
-      log_weight=-856.0;
-      //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
-      return 0;
-    }
-    return 16;
-  }
-  double lw_ligo=ligo_data.interp_linear(pars[pvi["M_chirp"]],
-                                         pars[pvi["q"]],
-                                         Lambdat);
-  log_weight+=lw_ligo;
-  dat[dvi["Lambdat"]]=Lambdat;
-  dat[dvi["lw_ligo"]]=lw_ligo;
-  
-  if (verbose>0) {
-    cout << "log weight from LIGO, log weight after: "
-         << lw_ligo << " " << log_weight << endl;
+  } else {
+    double lw_ligo=0.0;
+    dat[dvi["lw_ligo"]]=lw_ligo;
   }
 
   if (check_timing) {
@@ -1135,28 +1136,22 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
     cout << "R14: " << R14x << endl;
   }
   
-  // AWS 10/21/2020: changed from 11km to 9km
-  if (R14x>16.0 || R14x<9.0) {
-    dat[dvi["tov_fail"]]=1.0;
-    if (verbose>0) {
-      std::cout << "Fail. Radius of 1.4 unphysical." << std::endl;
-    }
-    if (err_as_small_wgt) {
-      log_weight=-837.0;
-      //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
-      return 0;
-    }
-    return 37;
-  }
-  
-  if (tmvsr.interp("gm",1.4,"r")>r14_max) {
-    if (err_as_small_wgt) {
-      log_weight=-843.0;
-      //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
-      return 0;
-    }
-    return 43;
-  }
+  // AWS 10/21/2020: changed from 11km to 9km SR 02/26/2025: Ignoring these
+  // constraints for nomma runs if (R14x>16.0 || R14x<9.0) {
+  // dat[dvi["tov_fail"]]=1.0; if (verbose>0) { std::cout << "Fail. Radius of
+  // 1.4 unphysical." << std::endl;
+  //   }
+  //   if (err_as_small_wgt) { log_weight=-837.0; //for(size_t k=0;k<ndat;k++)
+  //     dat[k]=0.0; return 0;
+  //   }
+  //   return 37;
+  // }
+  //
+  // if (tmvsr.interp("gm",1.4,"r")>r14_max) { if (err_as_small_wgt) {
+  //   log_weight=-843.0; //for(size_t k=0;k<ndat;k++) dat[k]=0.0; return 0;
+  //   }
+  //   return 43;
+  // }
 
   if (check_timing) {
     // Record end time
@@ -1170,21 +1165,25 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
   
   // --------------------------------------------------------------
   // Compute the probability from the mass-radius data
-  
-  double lw_qlmxb=0.0;
-  int ns_ret=nsmr_like(pars,dat,nd.MR_data,lw_qlmxb);
-  dat[dvi["lw_qlmxb"]]=lw_qlmxb;
-  log_weight+=lw_qlmxb;
-  
-  dat[dvi["nsmr_fail"]]=0.0;
-  if (ns_ret!=0 || log_weight<-800.0) {
-    dat[dvi["nsmr_fail"]]=1.0;
-    if (err_as_small_wgt) {
-      log_weight=-843.0;
-      //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
-      return 0;
+  if (!no_qlmxb) {
+    double lw_qlmxb=0.0;
+    int ns_ret=nsmr_like(pars,dat,nd.MR_data,lw_qlmxb);
+    dat[dvi["lw_qlmxb"]]=lw_qlmxb;
+    log_weight+=lw_qlmxb;
+    
+    dat[dvi["nsmr_fail"]]=0.0;
+    if (ns_ret!=0 || log_weight<-800.0) {
+      dat[dvi["nsmr_fail"]]=1.0;
+      if (err_as_small_wgt) {
+        log_weight=-843.0;
+        //for(size_t k=0;k<ndat;k++) dat[k]=0.0;
+        return 0;
+      }
+      return 43;
     }
-    return 43;
+  } else {
+    double lw_qlmxb=0.0;
+    dat[dvi["lw_qlmxb"]]=lw_qlmxb;
   }
 
   if (check_timing) {
@@ -1238,10 +1237,10 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
                                "mstla mstsm msts0 mstsp");
   int temp_index=0;
   
-  // This copies all but the lowest density point to the nscool_core
-  // table. I'm not sure why the lowest density point (which is
-  // n_B=0.05 fm^{-3} as determined by the o2scl::nstar_cold object)
-  // is omitted, but this seems to work for now.
+  // This copies all but the lowest density point to the nscool_core table. I'm
+  // not sure why the lowest density point (which is n_B=0.05 fm^{-3} as
+  // determined by the o2scl::nstar_cold object) is omitted, but this seems to
+  // work for now.
   
   for(int i=te->get_nlines()-1; i>0; i--) {
     
@@ -1289,16 +1288,16 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
       double nb=nw.nscool_crust.get("n",j);
       double ed=nst.def_eos_tov.ed_from_nb(nb);
       double pr=nst.def_eos_tov.pr_from_nb(nb);
-      //std::cout << nb << " " << nw.nscool_crust.get("rho",j) << " "
-      //<< nw.nscool_crust.get("P",j) << " ";
+      //std::cout << nb << " " << nw.nscool_crust.get("rho",j) << " " <<
+      //nw.nscool_crust.get("P",j) << " ";
       nw.nscool_crust.set
         ("rho",j,o2scl::o2scl_settings.get_convert_units().convert
          ("Msun/km^3","g/cm^3",ed));
       nw.nscool_crust.set
         ("P",j,o2scl::o2scl_settings.get_convert_units().convert
          ("Msun/km^3","dyne/cm^2",pr));
-      //std::cout << nw.nscool_crust.get("rho",j) << " "
-      //<< nw.nscool_crust.get("P",j) << std::endl;
+      //std::cout << nw.nscool_crust.get("rho",j) << " " <<
+      //nw.nscool_crust.get("P",j) << std::endl;
     }
   }
 
@@ -1316,22 +1315,23 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
   MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
   MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
 
-  // Ensure that multiple MPI ranks are not writing to the 
-  // filesystem at the same time
+  // Ensure that multiple MPI ranks are not writing to the filesystem at the
+  // same time
   int tag=0, buffer=0;
   if (mpi_size>1 && mpi_rank>=1) {
     MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
              tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
   }
 #endif
+
+  if (!no_ins && !no_sxrt) {
   
   if(!flag_emu_aws){    
-    //size_t total_tasks=log_eta_grid.size()*mass_grid.size();
-    //size_t current_tasks=0;
+    //size_t total_tasks=log_eta_grid.size()*mass_grid.size(); size_t
+    //current_tasks=0;
 
-    // Setup task list as a two sets of triplets, source first,
-    // destination second
-    //vector<size_t> tasks;
+    // Setup task list as a two sets of triplets, source first, destination
+    // second vector<size_t> tasks;
 
   // --------------------------------------------------------------
   // Compute the cooling curves
@@ -1344,8 +1344,8 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
     //tasks.push_back(imass);
     double ns_mass=mass_grid[imass];
     // ---------------------------------------------------------
-	  // Compute the neutron star structure and store the EOS in a
-	  // table for the NScool object
+	  // Compute the neutron star structure and store the EOS in a table for the
+	  // NScool object
 
 	  int f_ret=nst.fixed(ns_mass);
 	  if (f_ret!=0) {
@@ -1358,8 +1358,8 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
 	    return 0;
 	  }
 
-	  // Note that this is different from class variable 'tmvsr',
-	  // which stores the full M-R curve. 
+	  // Note that this is different from class variable 'tmvsr', which stores the
+	  // full M-R curve. 
 	  std::shared_ptr<o2scl::table_units<> > tov_tab=nst.get_tov_results();
 	
 	  if (tov_tab->get_nlines()<5) {
@@ -1405,8 +1405,8 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
 	// --------------------------------------------------------------
 	// Compute the cooling curve 
 
-	// Control the number of timesteps between output. A
-	// large number effectively specifies no output.
+	// Control the number of timesteps between output. A large number effectively
+	// specifies no output.
 	if (verbose>1) {
 	  nw.main_out_it=20;
 	} else {
@@ -1469,8 +1469,8 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
   int_cv/=T_surf;
   dat[dvi["cv_"+o2scl::szttos(imass)]]=int_cv;
 	
-	// Interpolate the temperature and luminosity from the cooling
-	// calculation into the tensor_grid objects
+	// Interpolate the temperature and luminosity from the cooling calculation
+	// into the tensor_grid objects
 	for(int k=0;k<100;k++) {
           itp.set(nw.v_time.size(),nw.v_time,nw.v_tptr);
 	  double interp_tptr=itp.eval(t_grid[k]);
@@ -1480,8 +1480,7 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
 	  nscool_lum.set(ieta,imass,k,interp_lum);
 	}
   // ---------------------------------------------------
-  // Do SXRT calculations here to save time
-  // Q
+  // Do SXRT calculations here to save time Q
   double Q_heat=pars[pvi["Q"]];
 
   if (verbose>1) {
@@ -1561,6 +1560,7 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
       }
     }
   }
+    }
 
 #ifndef NO_MPI
   // Send a message to the next MPI rank
@@ -1736,15 +1736,14 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
   if (verbose>1) {
     std::cout << "Success." << std::endl;
     /*
-      std::cout << "Parameters: " << std::endl;
-      for(size_t i=0;i<pars.size();i++) {
-      std::cout << "pars[" << i << "]=" << pars[i] << ";" << std::endl;
+      std::cout << "Parameters: " << std::endl; for(size_t
+      i=0;i<pars.size();i++) { std::cout << "pars[" << i << "]=" << pars[i] <<
+      ";" << std::endl;
       }
       exit(-1);
     */
   }
-  //return -10;
-  //exit(-1);
+  //return -10; exit(-1);
   if (check_timing) {
     // Record end time
     auto end = std::chrono::high_resolution_clock::now();

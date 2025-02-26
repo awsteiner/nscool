@@ -200,6 +200,21 @@ int main(int argc, char *argv[]) {
   p_no_sxrt.b=&mw.no_sxrt;
   p_no_sxrt.help="no_sxrt";
   cl.par_list.insert(make_pair("no_sxrt",&p_no_sxrt));
+
+  o2scl::cli::parameter_bool p_no_qlmxb;
+  p_no_qlmxb.b=&mw.no_qlmxb;
+  p_no_qlmxb.help="no_qlmxb";
+  cl.par_list.insert(make_pair("no_qlmxb",&p_no_qlmxb));
+
+  o2scl::cli::parameter_bool p_no_ligo;
+  p_no_ligo.b=&mw.no_ligo;
+  p_no_ligo.help="no_ligo";
+  cl.par_list.insert(make_pair("no_ligo",&p_no_ligo));
+
+  o2scl::cli::parameter_bool p_no_prex;
+  p_no_prex.b=&mw.no_prex;
+  p_no_prex.help="no_prex";
+  cl.par_list.insert(make_pair("no_prex",&p_no_prex));
   
   cl.run_auto(argc,argv);
 

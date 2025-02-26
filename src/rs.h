@@ -1,16 +1,16 @@
 /*
-  
-  This code is separated into two classes for parallelization
-  purposes. The is only one mcmc_wrapper instance but there are
-  several data_eval instances, one for each OpenMP thread.
+
+  This code is separated into two classes for parallelization purposes. The is
+  only one mcmc_wrapper instance but there are several data_eval instances, one
+  for each OpenMP thread.
 
   ---------------------------------------------------------------
 
   Data comparison
 
-  A. Go through all time estimates where both tc and t* are
-  given and see what Potekhin recommends
-  
+  A. Go through all time estimates where both tc and t* are given and see what
+  Potekhin recommends
+
 
   * 1. 1E0102:
   * 2. J0822: both tc and t* 
@@ -72,23 +72,21 @@
   ---------------------------------------------------------------
 
   Todo list for Andrew:
-  
-  - Make sure the steady state curves converge reasonably often
-  (so far so good)
-  
+
+  - Make sure the steady state curves converge reasonably often (so far so good)
+
   - Fix the upper/lower limits for 1808 and 1905
-  
+
   - Check superfluidity models between INSs and SXRTs
-  
+
   - Check H vs. C for Cas A
-  
-  - Ensure we're computing the symmetry energy
-  (done I think)
-  
+
+  - Ensure we're computing the symmetry energy (done I think)
+
   - Remove global variables
 
   - Fix duplication of string lists like ins_names, etc.
-  
+
 */
 
 #ifndef RS_H
@@ -113,10 +111,9 @@
 
 /** \brief A specialized emulator for this code
 
-    Note that this emulator has a data type of array<double,ndat>,
-    because that is what the MCMC is using, but internally em1 uses a
-    data type of vector<double>, since not all output fields are
-    always emulated.
+    Note that this emulator has a data type of array<double,ndat>, because that
+    is what the MCMC is using, but internally em1 uses a data type of
+    vector<double>, since not all output fields are always emulated.
  */
 class emulator_rs {
   
@@ -173,8 +170,7 @@ public:
   
 };
 
-/** \brief Main control class to perform an MCMC simulation
-    of neutron star data
+/** \brief Main control class to perform an MCMC simulation of neutron star data
 */
 class mcmc_wrapper {
 
@@ -200,11 +196,20 @@ public:
   /// No isolated NSs
   bool no_ins;
 
-  /// Debug isolated NSs
-  bool debug_ins;
-
   /// No SXRTs
   bool no_sxrt;
+
+  /// No qllmxb andd nicer
+  bool no_qlmxb;
+
+  /// No ligo
+  bool no_ligo;
+
+  /// No prex
+  bool no_prex;
+
+  /// Debug isolated NSs
+  bool debug_ins;
   
   /// MPI rank, set in constructor
   int mpi_rank;

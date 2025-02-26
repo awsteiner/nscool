@@ -2,8 +2,7 @@
 #include <o2scl/anneal_gsl.h>
 //#include <o2scl/rng_gsl.h>
 #include <o2scl/kde_python.h>
-//#include <o2scl/o2scl_linalg.h>
-//#include <eigen3/Eigen>
+//#include <o2scl/o2scl_linalg.h> #include <eigen3/Eigen>
 
 #include "rs.h"
 
@@ -75,8 +74,8 @@ void emulator_rs::train(o2scl::vec_index &pvii,
     }
     
 #ifndef NO_MPI    
-    // Ensure that multiple MPI ranks are not writing to the 
-    // filesystem at the same time
+    // Ensure that multiple MPI ranks are not writing to the filesystem at the
+    // same time
     int tag=0, buffer=0;
     if (mpi_size>1 && mpi_rank>=1) {
       MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
@@ -148,12 +147,14 @@ void emulator_rs::train(o2scl::vec_index &pvii,
 
   //ip_1->set_functions("interpm_sklearn_dtr","verbose=1",0,
   //                "o2sclpy","set_data_str","eval","eval","eval");
-  //ip_2->set_functions("interpm_sklearn_dtr","verbose=1",0,
+  //                ip_2->set_functions("interpm_sklearn_dtr","verbose=1",0,
   //                "o2sclpy","set_data_str","eval","eval","eval");
 
-  //ip_1->set_functions("interpm_tf_dnn","verbose=1,hlayers=[512,512],batch_size=64,epochs=200,transform_in=stand, transform_out=stand,activations=[relu,relu]",0,
+  //ip_1->set_functions("interpm_tf_dnn","verbose=1,hlayers=[512,512],batch_size=64,epochs=200,transform_in=stand,
+  //                transform_out=stand,activations=[relu,relu]",0,
   //                "o2sclpy","set_data_str","eval","eval","eval");
-  //ip_2->set_functions("interpm_tf_dnn","verbose=1,hlayers=[512,512],batch_size=64,epochs=200,transform_in=stand, transform_out=stand,activations=[relu,relu]",0,
+  //                ip_2->set_functions("interpm_tf_dnn","verbose=1,hlayers=[512,512],batch_size=64,epochs=200,transform_in=stand,
+  //                transform_out=stand,activations=[relu,relu]",0,
   //                "o2sclpy","set_data_str","eval","eval","eval");
 
   ip_1->set_data_tensor(in_size[1],out_size[1],
@@ -189,8 +190,7 @@ mcmc_wrapper::mcmc_wrapper() {
   r14_max=20.0;
   mct.verbose=1;
     
-  //mpi_rank=0;
-  //mpi_size=1;
+  //mpi_rank=0; mpi_size=1;
 
 #ifndef NO_MPI    
   // Get MPI rank, etc.
@@ -208,10 +208,9 @@ mcmc_wrapper::mcmc_wrapper() {
   mct.mpi_start_time=time(0);
 #endif
     
-  // This is a relatively clear way to set parameters and units
-  // because it is obvious that each parameter is matched to a unit.
-  // This should be the authoritative list and other objects should
-  // derive from it.
+  // This is a relatively clear way to set parameters and units because it is
+  // obvious that each parameter is matched to a unit. This should be the
+  // authoritative list and other objects should derive from it.
   std::vector<std::string> temp_names_units=
     {"log10_Tcn","K","k_maxn","1/fm",
      "del_kn","1/fm","log10_Tcp","K",
@@ -233,10 +232,29 @@ mcmc_wrapper::mcmc_wrapper() {
     param_units.push_back(temp_names_units[i*2+1]);
   }
 
-  id.init_data(pvi,param_units);
-  nd.init_data(pvi,param_units);
-  sd.init_data(pvi,param_units);
-    
+  // This is the only way I could find, so that I can limit the mcmc parameters
+  // depending on the flags
+  no_nuclei=false;
+  no_prex=true;
+  no_sxrt=true;
+  no_ins=true;
+  no_qlmxb=true;
+  no_ligo=true;
+
+  // std::cout << "ins, sxrt, qlmxb, prex, ligo: " << no_ins << " " << no_sxrt
+  // << " " << no_qlmxb << " " << no_prex << " " << no_ligo << std::endl;
+  // std::cout << "pvi size before ins: " << pvi.size() << std::endl;
+  if (!no_ins) {
+    id.init_data(pvi,param_units);
+  }
+  // std::cout << "pvi size after ins: " << pvi.size() << std::endl; exit(-1);
+  if (!no_sxrt) {
+    sd.init_data(pvi,param_units);
+  }
+  if (!no_qlmxb) {
+    nd.init_data(pvi,param_units);
+  }
+  
   nparam=pvi.size();
 
   de_size=0;
@@ -289,8 +307,8 @@ mcmc_wrapper::mcmc_wrapper() {
   low[pvi["b1"]]=-10.0;
   high[pvi["b1"]]=10.0;
 
-  // Used values from page 10 of Steiner05 "Isospin Asymmetry in
-  // Nuclei" Table for initial values
+  // Used values from page 10 of Steiner05 "Isospin Asymmetry in Nuclei" Table
+  // for initial values
  
   low[pvi["xi"]]=-3.0351*10.0;
   high[pvi["xi"]]=3.0351*10.0;
@@ -331,60 +349,61 @@ mcmc_wrapper::mcmc_wrapper() {
   low[pvi["q"]]=0.5;
   high[pvi["q"]]=1.0;
 
-  // INS parameters
-  for (size_t i=0; i<id.list.size();i++) {
-    cooling_ns &c=id.list[i];
-    low[pvi[(string("mf_"))+c.name]]=0.0;
-    high[pvi[(string("mf_"))+c.name]]=1.0;
-    if (c.eta) {
-      low[pvi[(string("eta_"))+c.name]]=-17.0;
-      high[pvi[(string("eta_"))+c.name]]=-7.0;
+  if (!no_ins) {
+    // INS parameters
+    for (size_t i=0; i<id.list.size();i++) {
+      cooling_ns &c=id.list[i];
+      low[pvi[(string("mf_"))+c.name]]=0.0;
+      high[pvi[(string("mf_"))+c.name]]=1.0;
+      if (c.eta) {
+        low[pvi[(string("eta_"))+c.name]]=-17.0;
+        high[pvi[(string("eta_"))+c.name]]=-7.0;
+      }
+      // If it's an age upper limit star, then the age is a parameter and we
+      // allow it to vary from 100 years to the upper limit
+      if (c.tk==0.0 && c.tk_lo==0.0) {
+        low[pvi[((string)"t_")+c.name]]=100.0;
+        high[pvi[((string)"t_")+c.name]]=c.tc;
+      }
+      //if(c.L==0.0 && c.L_lo==0.0){ These luminosities are in units of 1.0e33
+      // erg/s low[pvi[((string)"L_")+c.name]]=0.0;
+      // high[pvi[((string)"L_")+c.name]]=c.L_hi;
+      //}
     }
-    // If it's an age upper limit star, then the age is a parameter
-    // and we allow it to vary from 100 years to the upper limit
-    if (c.tk==0.0 && c.tk_lo==0.0) {
-      low[pvi[((string)"t_")+c.name]]=100.0;
-      high[pvi[((string)"t_")+c.name]]=c.tc;
-    }
-    //if(c.L==0.0 && c.L_lo==0.0){
-    // These luminosities are in units of 1.0e33 erg/s
-    //  low[pvi[((string)"L_")+c.name]]=0.0;
-    //  high[pvi[((string)"L_")+c.name]]=c.L_hi;
-    //}
   }
 
-  // NSMR parameters
-  for (size_t i=0; i<nd.list.size(); i++){
-    nsmr &c=nd.list[i];
-    low[pvi[(string("mf_"))+c.name]]=0.0;
-    high[pvi[(string("mf_"))+c.name]]=1.0;
-    low[pvi[(string("eta_"))+c.name]]=0.0;
-    high[pvi[(string("eta_"))+c.name]]=1.0;
-  }
-    
-  // SXRT parameters
-  for (size_t i=0; i<sd.list.size(); i++){
-    sxrt &c=sd.list[i];
-    low[pvi[(string("mf_"))+c.name]]=0.0;
-    high[pvi[(string("mf_"))+c.name]]=1.0;
-    low[pvi[(string("eta_"))+c.name]]=-17.0;
-    high[pvi[(string("eta_"))+c.name]]=-7.0;
-    if (c.mdot_ul) {
-      low[pvi[(string("log10_mdot_"))+c.name]]=-13.0;
-      high[pvi[(string("log10_mdot_"))+c.name]]=log10(c.mdot);
+  if (!no_sxrt) {
+    // SXRT parameters
+    for (size_t i=0; i<sd.list.size(); i++){
+      sxrt &c=sd.list[i];
+      low[pvi[(string("mf_"))+c.name]]=0.0;
+      high[pvi[(string("mf_"))+c.name]]=1.0;
+      low[pvi[(string("eta_"))+c.name]]=-17.0;
+      high[pvi[(string("eta_"))+c.name]]=-7.0;
+      if (c.mdot_ul) {
+        low[pvi[(string("log10_mdot_"))+c.name]]=-13.0;
+        high[pvi[(string("log10_mdot_"))+c.name]]=log10(c.mdot);
+      }
+      //if (c.L_ul) { low[pvi[(string("L_"))+c.name]]=0.0;
+      //high[pvi[(string("L_"))+c.name]]=c.L;
+      //}
     }
-    //if (c.L_ul) {
-    //low[pvi[(string("L_"))+c.name]]=0.0;
-    //high[pvi[(string("L_"))+c.name]]=c.L;
-    //}
   }
-    
+
+  if (!no_qlmxb) {
+    // NSMR parameters
+    for (size_t i=0; i<nd.list.size(); i++){
+      nsmr &c=nd.list[i];
+      low[pvi[(string("mf_"))+c.name]]=0.0;
+      high[pvi[(string("mf_"))+c.name]]=1.0;
+      low[pvi[(string("eta_"))+c.name]]=0.0;
+      high[pvi[(string("eta_"))+c.name]]=1.0;
+    }
+  }
+
   ptype="none";
   verbose=1;
 
-  no_nuclei=false;
-  no_sxrt=false;
-  no_ins=false;
   debug_ins=false;
   flag_emu_aws=false;
   
@@ -567,8 +586,8 @@ int mcmc_wrapper::clean(std::vector<std::string> &sv, bool itive_com) {
 
 int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
 
-  // Instance of class for each OpenMP thread. The
-  // init() functions are called later.
+  // Instance of class for each OpenMP thread. The init() functions are called
+  // later.
   if (((int)de_size)<n_threads) {
     cout << "Creating de object for " << n_threads
 	 << " threads in mcmc()." << endl;
@@ -675,55 +694,59 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
   init[pvi["q"]]=0.9;
   step[pvi["q"]]=0.1;
 
-  // INS parameters
-  for (size_t i=0; i<id.list.size(); i++){
-    cooling_ns &c=id.list[i];
-    init[pvi[(string("mf_"))+c.name]]=0.4;
-    step[pvi[(string("mf_"))+c.name]]=0.1;
-    if (c.eta){
-      init[pvi[(string("eta_"))+c.name]]=-8.0;
+  if (!no_ins) {
+    // INS parameters
+    for (size_t i=0; i<id.list.size(); i++){
+      cooling_ns &c=id.list[i];
+      init[pvi[(string("mf_"))+c.name]]=0.4;
+      step[pvi[(string("mf_"))+c.name]]=0.1;
+      if (c.eta){
+        init[pvi[(string("eta_"))+c.name]]=-8.0;
+        step[pvi[(string("eta_"))+c.name]]=3.0;
+      }
+      if(c.tk==0.0 && c.tk_lo==0.0){
+        init[pvi[((string)"t_") + c.name]]=c.tc/2.0;
+        step[pvi[((string)"t_") + c.name]]=c.tc/20.0;
+      }
+      //if(c.L==0.0 && c.L_lo==0.0){ init[pvi[((string)"L_") +
+      //c.name]]=c.L_hi/2.0; step[pvi[((string)"L_") + c.name]]=c.L_hi/20.0;
+      //}
+    }
+  }
+
+  if (!no_sxrt) {
+    // SXRT parameters
+    for (size_t i=0; i<sd.list.size(); i++) {
+      sxrt &c=sd.list[i];
+      init[pvi[(string("mf_"))+c.name]]=0.4;
+      step[pvi[(string("mf_"))+c.name]]=0.1;
+      init[pvi[(string("eta_"))+c.name]]=-10.0;
       step[pvi[(string("eta_"))+c.name]]=3.0;
+      if (c.mdot_ul) {
+        init[pvi[(string("log10_mdot_"))+c.name]]=log10(c.mdot/2.0);
+        step[pvi[(string("log10_mdot_"))+c.name]]=
+	  (high[pvi[(string("log10_mdot_"))+c.name]]-
+	   low[pvi[(string("log10_mdot_"))+c.name]])/20.0;
+      }
+      //if (c.L_ul) { init[pvi[(string("L_"))+c.name]]=c.L/2.0;
+      //step[pvi[(string("L_"))+c.name]]=c.L/20000;
+      //}
     }
-    if(c.tk==0.0 && c.tk_lo==0.0){
-      init[pvi[((string)"t_") + c.name]]=c.tc/2.0;
-      step[pvi[((string)"t_") + c.name]]=c.tc/20.0;
+  }
+  
+  if (!no_qlmxb) {
+    // NSMR parameters
+    for(size_t i=0;i<nd.list.size();i++) {
+      nsmr &c=nd.list[i];
+      init[pvi[((string)"mf_")+c.name]]=0.4;
+      step[pvi[((string)"mf_")+c.name]]=0.1;
+      init[pvi[((string)"eta_")+c.name]]=0.1;
+      step[pvi[((string)"eta_")+c.name]]=0.5;
     }
-    //if(c.L==0.0 && c.L_lo==0.0){
-    //init[pvi[((string)"L_") + c.name]]=c.L_hi/2.0;
-    //step[pvi[((string)"L_") + c.name]]=c.L_hi/20.0;
-    //}
   }
 
-  // NSMR parameters
-  for(size_t i=0;i<nd.list.size();i++) {
-    nsmr &c=nd.list[i];
-    init[pvi[((string)"mf_")+c.name]]=0.4;
-    step[pvi[((string)"mf_")+c.name]]=0.1;
-    init[pvi[((string)"eta_")+c.name]]=0.1;
-    step[pvi[((string)"eta_")+c.name]]=0.5;
-  }
-
-  // SXRT parameters
-  for (size_t i=0; i<sd.list.size(); i++) {
-    sxrt &c=sd.list[i];
-    init[pvi[(string("mf_"))+c.name]]=0.4;
-    step[pvi[(string("mf_"))+c.name]]=0.1;
-    init[pvi[(string("eta_"))+c.name]]=-10.0;
-    step[pvi[(string("eta_"))+c.name]]=3.0;
-    if (c.mdot_ul) {
-      init[pvi[(string("log10_mdot_"))+c.name]]=log10(c.mdot/2.0);
-      step[pvi[(string("log10_mdot_"))+c.name]]=
-	(high[pvi[(string("log10_mdot_"))+c.name]]-
-	 low[pvi[(string("log10_mdot_"))+c.name]])/20.0;
-    }
-    //if (c.L_ul) {
-    //init[pvi[(string("L_"))+c.name]]=c.L/2.0;
-    //step[pvi[(string("L_"))+c.name]]=c.L/20000;
-    //}
-  }
-
-  // If initial points not already specified, use the 'init'
-  // array to specify initial points
+  // If initial points not already specified, use the 'init' array to specify
+  // initial points
     
   if (mct.initial_points.size()==0) {
     for(size_t k=0;k<((size_t)n_threads);k++) {
@@ -771,11 +794,10 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
        std::placeholders::_3,std::placeholders::_4);
   }
 
-  // This code constructs the parameter and output names and units
-  // for use by the MCMC class, pnames and punits. This should be
-  // the authoritative list of output names and units, but the
-  // parameter names and units are initialized separately in the
-  // constructor for this class.
+  // This code constructs the parameter and output names and units for use by
+  // the MCMC class, pnames and punits. This should be the authoritative list of
+  // output names and units, but the parameter names and units are initialized
+  // separately in the constructor for this class.
 
   vector<string> pnames, punits, dnames, dunits;
 
@@ -953,16 +975,13 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     }
     
     /*
-      for(size_t i=0; i<pnames.size(); i++) {
-      cout << pnames[i] << endl;
-      //cout << "low" << "  " << low[i] << "  " << "high" << "  " 
-      //<< high[i] << endl;
-      //cout << "init" << "  " << init[i] << "  " << "step" << "  " 
-      //<< step[i] << endl;
+      for(size_t i=0; i<pnames.size(); i++) { cout << pnames[i] << endl; //cout
+      << "low" << "  " << low[i] << "  " << "high" << "  " //<< high[i] << endl;
+      //cout << "init" << "  " << init[i] << "  " << "step" << "  " //<< step[i]
+      << endl;
       }
-    
-      for(size_t i=0; i<init.size(); i++) {
-      cout << init[i] << "  ";
+
+      for(size_t i=0; i<init.size(); i++) { cout << init[i] << "  ";
       }
     */
 
@@ -1035,6 +1054,9 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     de[k].no_ins=no_ins;
     de[k].debug_ins=debug_ins;
     de[k].no_sxrt=no_sxrt;
+    de[k].no_qlmxb=no_qlmxb;
+    de[k].no_ligo=no_ligo;
+    de[k].no_prex=no_prex;
     de[k].w_tl_prof=w_tl_prof;
     de[k].r14_max=r14_max;
   }
@@ -1060,8 +1082,8 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
   MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
   MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
   
-  // Ensure that multiple MPI ranks are not writing to the 
-  // filesystem at the same time
+  // Ensure that multiple MPI ranks are not writing to the filesystem at the
+  // same time
   int tag=0, buffer=0;
   if (mpi_size>1 && mpi_rank>=1) {
     MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
@@ -1069,8 +1091,8 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
   }
 #endif
   
-  // Initialize the file with settings, etc. (must be done
-  // after de[k].init() above)
+  // Initialize the file with settings, etc. (must be done after de[k].init()
+  // above)
   string fname=mct.prefix+"_"+o2scl::itos(mpi_rank)+"_out";
   hdf_file hf2;
   hf2.open_or_create(fname);
@@ -1099,16 +1121,14 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
   }
 #endif
 
-  // Proposal distributions
-  //vector<prob_cond_mdim_fixed_step<ubvector> > pcmrw;
-  //vector<prob_cond_mdim_indep<> *> pcmi;
-  //vector<prob_cond_mdim_gaussian<> *> pcmg;
-  //vector<prob_dens_mdim_gmm<>> pgmm;
+  // Proposal distributions vector<prob_cond_mdim_fixed_step<ubvector> > pcmrw;
+  //vector<prob_cond_mdim_indep<> *> pcmi; vector<prob_cond_mdim_gaussian<> *>
+  //pcmg; vector<prob_dens_mdim_gmm<>> pgmm;
   vector<kde_python<ubvector>> pkde(1);
 
 #ifdef RS_NEVER_DEFINED
-  // The probability density vector type is ubvector,
-  //but the vector type for the table is vector<double> .
+  // The probability density vector type is ubvector, but the vector type for
+  //the table is vector<double> .
 
   if (false) {
     
@@ -1117,8 +1137,8 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
     
-    // Ensure that multiple MPI ranks are not writing to the 
-    // filesystem at the same time
+    // Ensure that multiple MPI ranks are not writing to the filesystem at the
+    // same time
     tag=0;
     buffer=0;
     if (mpi_size>1 && mpi_rank>=1) {
@@ -1240,8 +1260,7 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     pcmrw.resize(n_threads);
       
     unsigned long int seed=time(0);
-    //for(size_t i=0;i<nparam;i++) {
-    //step[i]/=step_fac;
+    //for(size_t i=0;i<nparam;i++) { step[i]/=step_fac;
     //}
 
     if (true) {
@@ -1303,9 +1322,8 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
       
-    // Ensure that multiple MPI ranks aren't reading from the
-    // filesystem at the same time
-    //int tag=0, buffer=0;
+    // Ensure that multiple MPI ranks aren't reading from the filesystem at the
+    // same time int tag=0, buffer=0;
     if (mpi_size>1 && mpi_rank>=1) {
       MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
 	       tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
@@ -1383,8 +1401,8 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
 
     // Set gaussian proposal distribution
       
-    //vector<prob_cond_mdim_indep<> *> pcmi;
-    //vector<prob_cond_mdim_gmm<> *> pgmm;
+    //vector<prob_cond_mdim_indep<> *> pcmi; vector<prob_cond_mdim_gmm<> *>
+    //pgmm;
     pcmi.resize(n_threads);
     pgmm.resize(n_threads);
 
@@ -1395,9 +1413,8 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
       
-    // Ensure that multiple MPI ranks aren't reading from the
-    // filesystem at the same time
-    //int tag=0, buffer=0;
+    // Ensure that multiple MPI ranks aren't reading from the filesystem at the
+    // same time int tag=0, buffer=0;
     if (mpi_size>1 && mpi_rank>=1) {
       MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
 	       tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
@@ -1426,16 +1443,12 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
 
     /*
     pcmi[0]=new prob_cond_mdim_indep<>(pgmm[0]);
-    
-    unsigned long int seed2=time(0);
-    for(size_t it=0;it<((size_t)n_threads);it++) {
-      seed2*=(mpi_rank*n_threads+it+1);
-      cout << "Setting seed: " << seed2 << endl;
-      pgmm[0].r2.set_seed(seed2);
-      unsigned long int seed3=seed2*2+1;
-      for(size_t j=0;j<pgmm[0].pdmg.size();j++) {
-	pgmm[0].pdmg[j].pdg.set_seed(seed3);
-	seed3=seed3*2+1;
+
+    unsigned long int seed2=time(0); for(size_t
+    it=0;it<((size_t)n_threads);it++) { seed2*=(mpi_rank*n_threads+it+1); cout
+    << "Setting seed: " << seed2 << endl; pgmm[0].r2.set_seed(seed2); unsigned
+    long int seed3=seed2*2+1; for(size_t j=0;j<pgmm[0].pdmg.size();j++) {
+    pgmm[0].pdmg[j].pdg.set_seed(seed3); seed3=seed3*2+1;
       }
     }
     mct.set_proposal_ptrs(pcmi);
@@ -1456,9 +1469,8 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
       
-    // Ensure that multiple MPI ranks aren't reading from the
-    // filesystem at the same time
-    //int tag=0, buffer=0;
+    // Ensure that multiple MPI ranks aren't reading from the filesystem at the
+    // same time int tag=0, buffer=0;
     if (mpi_size>1 && mpi_rank>=1) {
       MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
 	       tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
@@ -1522,10 +1534,9 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     
   }
 
-  // Maximum number of iterations (leaving this to the
-  // default value, which is zero, allows an infinite number of
-  // iterations and only stops the code after max_time).
-  //mct.max_iters=50000;
+  // Maximum number of iterations (leaving this to the default value, which is
+  // zero, allows an infinite number of iterations and only stops the code after
+  // max_time). mct.max_iters=50000;
 
   // Set number of OpenMP threads
   mct.n_threads=n_threads;
@@ -1536,8 +1547,8 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
   mct.table_sequence=false;
 
   if (false) {
-    // AWS, 11/21/2020: temporary code to check the init, low, and
-    // high values for all of the parameters.
+    // AWS, 11/21/2020: temporary code to check the init, low, and high values
+    // for all of the parameters.
     for(size_t i=0;i<nparam;i++) {
       cout.setf(ios::showpos);
       cout.width(15);
@@ -1594,8 +1605,8 @@ int mcmc_wrapper::initial_point_first(std::vector<std::string> &sv,
   o2scl::table_units<> tip;
     
 #ifndef NO_MPI
-  // Ensure that multiple threads aren't reading from the
-  // filesystem at the same time
+  // Ensure that multiple threads aren't reading from the filesystem at the same
+  // time
   int tag=0, buffer=0;
   if (mpi_size>1 && mpi_rank>0) {
     MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
@@ -1674,8 +1685,8 @@ int mcmc_wrapper::initial_point_rand(std::vector<std::string> &sv,
   MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
   MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
 
-  // Ensure that multiple threads aren't reading from the
-  // filesystem at the same time
+  // Ensure that multiple threads aren't reading from the filesystem at the same
+  // time
   int tag=0, buffer=0;
   if (mpi_size>1 && mpi_rank>0) {
     MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
@@ -1790,8 +1801,8 @@ int mcmc_wrapper::make_gaussian(std::vector<std::string> &sv, bool itive_com) {
   typedef matrix_column_gen<const_matrix_view_table<std::vector<double> > >
     mat_col_t;
     
-  // Set peak with average and diagonal elements in covariance
-  // matrix with variance
+  // Set peak with average and diagonal elements in covariance matrix with
+  // variance
   for(size_t i=0;i<nparam;i++) {
     mat_col_t col(mvt,i);
     if (weighted) {
@@ -1867,10 +1878,9 @@ int mcmc_wrapper::make_gaussian2(std::vector<std::string> &sv, bool itive_com) {
 
   // Remove rows with small weight
   /*
-    cout << t.get_nlines() << " rows." << endl;
-    cout << "Deleting rows with small weight." << endl;
-    t.delete_rows_func("log_wgt<(-100)");
-    cout << t.get_nlines() << " rows remaining." << endl;
+    cout << t.get_nlines() << " rows." << endl; cout << "Deleting rows with
+    small weight." << endl; t.delete_rows_func("log_wgt<(-100)"); cout <<
+    t.get_nlines() << " rows remaining." << endl;
   */
 
   // Compute minimum and maximum vectors
@@ -1898,8 +1908,8 @@ int mcmc_wrapper::make_gaussian2(std::vector<std::string> &sv, bool itive_com) {
   typedef matrix_column_gen<const_matrix_view_table<std::vector<double> > >
     mat_col_t;
 
-  // Set peak with average and diagonal elements in covariance
-  // matrix with variance
+  // Set peak with average and diagonal elements in covariance matrix with
+  // variance
   for(size_t i=0;i<nparam;i++) {
     //peak[i]=(maxv[i]+minv[i])/2.0;
     peak[i]=t.get(i+5,max_row);
@@ -1951,8 +1961,7 @@ double mcmc_wrapper::gauss_min_func
   bool bad=false;
   for(size_t i=nparam;i<2*nparam;i++) {
     if (p[i]<0.0) {
-      //cout << "Bad: " << i << " " << p[i] << endl;
-      //exit(-1);
+      //cout << "Bad: " << i << " " << p[i] << endl; exit(-1);
       bad=true;
     }
   }
@@ -2087,25 +2096,18 @@ int mcmc_wrapper::fit_gaussian(std::vector<std::string> &sv, bool itive_com) {
   p2[2*nparam]=-110.0;
 
   /*
-  // variance parameter for b3
-  size_t ix=vi["xi"]+nparam;
-  double val=mf(2*nparam+1,p);
-  cout << "0 " << val << endl;
-  for(size_t i=1;i<100;i++) {
-  p[ix]*=1.2;
-  val=mf(2*nparam+1,p);
-  cout << i << " " << val << endl;
+  // variance parameter for b3 size_t ix=vi["xi"]+nparam; double
+  val=mf(2*nparam+1,p); cout << "0 " << val << endl; for(size_t i=1;i<100;i++) {
+  p[ix]*=1.2; val=mf(2*nparam+1,p); cout << i << " " << val << endl;
   }
   exit(-1);
   */
     
   /*
-    for(size_t i=0;i<11;i++) {
-    for(size_t k=0;k<2*nparam+1;k++) {
+    for(size_t i=0;i<11;i++) { for(size_t k=0;k<2*nparam+1;k++) {
     p3[k]=p[k]-((double)i)/10.0*(p2[k]-p[k]);
     }
-    double y=mf(nparam,p3);
-    cout << i << " " << y << endl;
+    double y=mf(nparam,p3); cout << i << " " << y << endl;
     }
     exit(-1);
   */
@@ -2113,9 +2115,8 @@ int mcmc_wrapper::fit_gaussian(std::vector<std::string> &sv, bool itive_com) {
   double fmin;
 
   /*
-    mmin_bfgs2<> mb;
-    mb.err_nonconv=false;
-    int ret=mb.mmin(2*nparam+1,p,fmin,mf);
+    mmin_bfgs2<> mb; mb.err_nonconv=false; int
+    ret=mb.mmin(2*nparam+1,p,fmin,mf);
   */
 
   anneal_gsl<> ga;
@@ -2132,10 +2133,7 @@ int mcmc_wrapper::fit_gaussian(std::vector<std::string> &sv, bool itive_com) {
   int ret=ga.mmin(2*nparam+1,p,fmin,mf);
     
   /*
-    mmin_simp2<> ms;
-    ms.verbose=1;
-    ms.ntrial=1000;
-    ms.err_nonconv=false;
+    mmin_simp2<> ms; ms.verbose=1; ms.ntrial=1000; ms.err_nonconv=false;
 
     int ret=ms.mmin_twovec(2*nparam+1,p,p2,fmin,mf);
   */

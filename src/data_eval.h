@@ -101,6 +101,14 @@ public:
    */
   bool no_sxrt;
 
+  /** \brief If true, omit the SXRT calculation
+   */
+   bool no_qlmxb;
+
+  /** \brief If true, omit the SXRT calculation
+   */
+  bool no_ligo;
+
   /** \brief If true, output more information about the INS likelihood
    */
   bool debug_ins;
@@ -108,6 +116,10 @@ public:
   /** \brief If true, omit the nuclear structure calculation
    */
   bool no_nuclei;
+
+  /** \brief If true, omit the prex calculation
+   */
+   bool no_prex;
   //@}
 
   /// \name Quantities specified in init()

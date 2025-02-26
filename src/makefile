@@ -585,6 +585,16 @@ bmark:
 		-initial-point-best ../data/emu_init 1.0e-6 5 \
 	  -set prefix ../data/bmark -mcmc
 
+nomma:
+	mpirun -np 1 ./rs_emu -threads 1 \
+		-set file_update_time 1800 \
+		-set aff_inv 1 -set n_walk 5 \
+		-set mcmc_verbose 2 -set verbose 1 -set max_iters 5 \
+		-initial-point-best ../data/emu_init 1.0e-6 5 \
+		-set no_ins 1 -set no_sxrt 1 -set no_qlmxb 1 \
+		-set no_ligo 1 -set no_prex 1 \
+	  	-set prefix ../data/nomma -mcmc
+
 test_threads:
 	mpirun -np 1 ./test -threads 2 
 
