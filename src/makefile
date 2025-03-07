@@ -14,12 +14,9 @@ YEAR = $(shell date +'%y')
 # ----------------------------------------------------------------
 # User-specific settings
 # ----------------------------------------------------------------
-# LIBS is the list of libraries
-# LFC is the local fortran compiler
-# LCXX is the local C++ compiler
-# LCFLAGS are the local C++ compiler flags
-# LFFLAGS are the local fortran compiler flags
-# FLIBS are fortran system libraries
+# LIBS is the list of libraries LFC is the local fortran compiler LCXX is the
+# local C++ compiler LCFLAGS are the local C++ compiler flags LFFLAGS are the
+# local fortran compiler flags FLIBS are fortran system libraries
 
 LIBS = -L/usr/local/hdf5/lib \
 	-lo2scl -lhdf5 -lgsl \
@@ -582,18 +579,18 @@ bmark:
 	mpirun -np 1 ./rs_emu -threads 1 \
 		-set file_update_time 1800 \
 		-set mcmc_verbose 2 -set verbose 1 -set max_iters 1 \
-		-initial-point-best ../data/emu_init 1.0e-6 5 \
+		-initial-point-best ../data/combined_emu_last 1.0e-6 6 \
 	  -set prefix ../data/bmark -mcmc
 
 nomma:
-	mpirun -np 1 ./rs_emu -threads 1 \
+	mpirun -np 4 ./rs_emu -threads 1 \
 		-set file_update_time 1800 \
-		-set aff_inv 1 -set n_walk 5 \
-		-set mcmc_verbose 2 -set verbose 1 -set max_iters 5 \
-		-initial-point-best ../data/emu_init 1.0e-6 5 \
+		-set aff_inv 1 -set n_walk 966 \
+		-set mcmc_verbose 2 -set verbose 1 -set max_time 432000 \
+		-initial-point-best ../data/combined_emu_last 1.0e-6 6 \
 		-set no_ins 1 -set no_sxrt 1 -set no_qlmxb 1 \
 		-set no_ligo 1 -set no_prex 1 \
-	  	-set prefix ../data/nomma -mcmc
+	  	-set prefix ../data/nomma2 -mcmc > nomma.out 2>&1 &
 
 test_threads:
 	mpirun -np 1 ./test -threads 2 
@@ -693,8 +690,7 @@ M30_He:
 		-function "temp1*temp2" prob \
 		-den-plot prob -contours 0.5 prob -plot "lw=2,c=w" -show 
 
-# 7.5 to 8.9
-# 1.2 at 8.2 is 0.217
+# 7.5 to 8.9 1.2 at 8.2 is 0.217
 M30_H:
 	o2graph -set colbar 1 -set verbose 1 -create table3d \
 		R "grid:5,15.83,10.83/99" M "grid:0.5,2.5,2/99" \
