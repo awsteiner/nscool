@@ -81,7 +81,7 @@ OBJS  = precool.o conductivity.o conductivity_core.o \
 	opacity.o neutrino.o neutrino_core.o neutrino_crust.o \
 	spec_heat.o density.o tc.o tc_Ioffe.o \
 	Tools.o conductivity_crust.o NSCool.o
-	
+
 OBJS_NOMPI  = precool_nompi.o conductivity_nompi.o \
 	conductivity_core_nompi.o \
 	opacity_nompi.o neutrino_nompi.o neutrino_core_nompi.o \

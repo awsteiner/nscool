@@ -1114,6 +1114,9 @@ void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
            std::pow(x, 3.0 + 3.0 * t) / (1.0 + t);
   };
 
+  std::cout << "Fri2: " << BARD << " " << Index << std::endl;
+  
+  static const double PI=3.14159265;
   if (Index == 30) {
     double f = std::log(1.0 + BARD / 5.0e-9);
     double Rp = 5.688 + 0.02628 * f + 0.009468 * f * f;
@@ -1123,19 +1126,21 @@ void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
     double nn_out = 0.0;
     double tp = 6.0;
     double tn = tp;
-    double Nin = o2scl_const::pi / 0.75 * Rn * Rn * Rn * nn_in * SOyam(tn, 1.0);
-    Z = o2scl_const::pi / 0.75 * Rp * Rp * Rp * np_in * SOyam(tp, 1.0);
+    double Nin = PI / 0.75 * Rn * Rn * Rn * nn_in * SOyam(tn, 1.0);
+    Z = PI / 0.75 * Rp * Rp * Rp * np_in * SOyam(tp, 1.0);
     Anuc = Z + Nin;
     A = Anuc;
-    double Rws = std::pow(A / BARD * 0.75 / o2scl_const::pi, 1.0 / 3.0);
+    std::cout << "Fri4: " << Nin << " " << Z << " " << Anuc << std::endl;
+    double Rws = std::pow(A / BARD * 0.75 / PI, 0.333333);
     if (Rws < Rn) {
       std::cerr << "OYAFORM: too large Rn for outer envelope!\n";
       std::exit(1);
     }
     // final
-    double aa = std::pow((A / BARD), 1.0 / 3.0); // not used
+    double aa = std::pow((A / BARD), 0.333333); // not used
+    std::cout << "Fri3: " << aa << " " << tp << std::endl;
 
-    double Rp0eff = std::pow((Z / (o2scl_const::pi * 0.75 * np_in)), 1.0 / 3.0);
+    double Rp0eff = std::pow((Z / PI * 0.75 / np_in), 0.333333);
     double tmp_sOy = SOyam(tp, 1.0);
     double Rp2eff =
         Rp * std::sqrt((1.0 - 15.0 / (5.0 + tp) + 15.0 / (5.0 + 2.0 * tp) -
@@ -1148,7 +1153,7 @@ void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
         Rp * std::pow(((1.0 - 18.0 / (6.0 + tp) + 18.0 / (6.0 + 2.0 * tp) -
                         6.0 / (6.0 + 3.0 * tp)) /
                        tmp_sOy),
-                      1.0 / 3.0);
+                      0.333333);
 
     double Rws_ = Rws; // rename
     xnuc = Rp2eff / Rws_;
@@ -1161,16 +1166,16 @@ void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
     double Rn = 9.406 + 1.481 * f + 0.4625 * f * f + 0.05738 * f * f * f;
     double dn_n =
         (9.761 - 1.322 * f - 0.5544 * f * f - 0.07624 * f * f * f) / 100.0;
-    double Nin = o2scl_const::pi / 0.75 * std::pow(Rn, 3.0) * dn_n *
+    double Nin = PI / 0.75 * std::pow(Rn, 3.0) * dn_n *
                  SOyam(tn, std::min(1.0, Rws / Rn));
     double tp = 1.0 / (0.1558 + 2.225e-3 * g + 9.452e-4 * g * g);
     double Rp = 8.345 + 0.7767 * f + 0.1333 * f * f + 0.008707 * f * f * f;
     double np_in =
         (4.040 - 1.097 * f - 0.0723 * f * f + 0.0225 * f * f * f) / 100.0;
-    Z = o2scl_const::pi / 0.75 * std::pow(Rp, 3.0) * np_in *
+    Z = PI / 0.75 * std::pow(Rp, 3.0) * np_in *
         SOyam(tp, std::min(1.0, Rws / Rp));
-    double Nfree = BARD * o2scl_const::pi / 0.75 * std::pow(Rws, 3.0) - Z - Nin;
-    double nn_out = Nfree / (o2scl_const::pi / 0.75 * std::pow(Rws, 3.0));
+    double Nfree = BARD * PI / 0.75 * std::pow(Rws, 3.0) - Z - Nin;
+    double nn_out = Nfree / (PI / 0.75 * std::pow(Rws, 3.0));
     double nn_in = nn_out + dn_n;
 
     A = Z + Nfree + Nin;
@@ -1180,7 +1185,7 @@ void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
     Anuc = Anuc_;
 
     double aa = std::pow((A / BARD), 1.0 / 3.0);
-    double Rp0eff = std::pow((Z / (o2scl_const::pi * 0.75 * np_in)), 1.0 / 3.0);
+    double Rp0eff = std::pow((Z / (PI * 0.75 * np_in)), 1.0 / 3.0);
 
     double tmp_sOy = SOyam(tp, std::min(1.0, Rws / Rp));
     double Rp2eff =
@@ -1225,6 +1230,7 @@ void nscool::con_e_phon_ion_GYP(double T, double rho, double A_in, double A1_in,
   const double a_2 = 0.01180;
 
   if (debug == 1.2) {
+    std::cout.precision(10);
     std::cout << "Entering con_e_phon_ion_GYP: T, rho= " << T << ", " << rho
               << std::endl;
   }
@@ -1234,6 +1240,7 @@ void nscool::con_e_phon_ion_GYP(double T, double rho, double A_in, double A1_in,
   double Z = Z_in, A1 = A1_in, A = A_in, xnuc, xnuct;
 
   OYAFORM(BARD, Index, Z, A1, A, xnuc, xnuct);
+  std::cout << "Fri1: " << xnuc << " " << Z << " " << A << std::endl;
   if (ifs == 0) {
     xnuc = 0.0;
     xnuct = 0.0;
@@ -1302,8 +1309,11 @@ void nscool::con_e_phon_ion_GYP(double T, double rho, double A_in, double A1_in,
   nu_e_l = nu_l;
 
   if (debug == 1.2) {
+    std::cout.precision(10);
     std::cout << "Exiting con_e_phon_ion_GYP: sigma, lambda= " << sigma << ", "
-              << lambda << std::endl;
+              << lambda << " " << nu0 << " " << nu_e_s << " " << nu_e_l
+              << std::endl;
+    exit(-1);
   }
   return;
 }
