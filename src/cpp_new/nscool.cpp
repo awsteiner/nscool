@@ -168,7 +168,7 @@ nscool::nscool(std::string dir) {
 }
 
 /// \name Generic functions
-//@{
+//@{-------------------------------------------------------------------------------------
 /** \brief Desc
  */
 inline double fexp(double x) {
@@ -176,37 +176,39 @@ inline double fexp(double x) {
     return exp(x);
   return exp(-700.0);
 }
+//---------------------------------------------------------------------------------------
 /** \brief Desc
  */
 inline double u_1s0(double t) {
   return sqrt(1.0 - t) * (1.4560 - 0.1570 / sqrt(t) + 1.7640 / t);
 }
-
+//---------------------------------------------------------------------------------------
 /** \brief Desc
  */
 inline double u_3p2B(double t) {
   return sqrt(1.0 - t) * (0.78930 + 1.1880 / t);
 }
-
+//---------------------------------------------------------------------------------------
 /** \brief A “pairing suppression factor” used in multiple places:
  */
 double r_1s0(double u) {
   return pow(0.23120 + hypot(0.7688, 0.1438 * u), 5.50) *
          fexp(3.4270 - hypot(3.4270, u));
 }
-
+//---------------------------------------------------------------------------------------
 /** \brief Desc
  */
 double r_3p2B(double u) {
   return pow(0.25460 + hypot(0.7454, 0.1284 * u), 5.0) *
          fexp(2.7010 - hypot(2.7010, u));
 }
+//---------------------------------------------------------------------------------------
 // We define a few inline Fortran-like helper macros:
 inline double smooth(double x) {
   // Fortran: smooth(x) = 6*x^5 - 15*x^4 + 10*x^3
   return 6.0 * std::pow(x, 5) - 15.0 * std::pow(x, 4) + 10.0 * std::pow(x, 3);
 }
-
+//---------------------------------------------------------------------------------------
 // The exp_int(x) function from fortran
 inline double exp_int(double x) {
   if (x <= 0.0) {
@@ -226,7 +228,7 @@ inline double exp_int(double x) {
     return val;
   }
 }
-
+//---------------------------------------------------------------------------------------
 // get_lam(...) helper for GYP code
 inline void get_lam(double s, double w, double &Lam1, double &Lam2) {
   static constexpr double eps = 0.05;
@@ -256,7 +258,7 @@ inline void get_lam(double s, double w, double &Lam1, double &Lam2) {
     Lam2 = 0.5 * part2;
   }
 }
-
+//---------------------------------------------------------------------------------------
 // Coulomb_imp_YU(x)
 inline double Coulomb_imp_YU(double x) {
   double beta = x / std::sqrt(1.0 + x * x);
@@ -264,7 +266,7 @@ inline double Coulomb_imp_YU(double x) {
   double val = std::log(1.0 / q) - 0.5 * (1.0 + beta * beta);
   return val;
 }
-
+//---------------------------------------------------------------------------------------
 /** \brief Suppression factor
  */
 inline double r_1s0_1s0(double v1, double v2) {
@@ -292,7 +294,7 @@ inline double r_1s0_1s0(double v1, double v2) {
 
   return u / (u + 0.91630) * S + D;
 }
-
+//---------------------------------------------------------------------------------------
 /** \brief Suppression factor
  */
 double nscool::r_1s0_3p2B(double t1, double t2) {
@@ -307,7 +309,7 @@ double nscool::r_1s0_3p2B(double t1, double t2) {
   return ret;
 }
 //@}
-
+//---------------------------------------------------------------------------------------
 double nscool::cvelec(double t, double rho, double a, double z) {
   double hb = 1.054588e-27;
   double kb = 1.380662e-16;
@@ -334,7 +336,7 @@ double nscool::cvelec(double t, double rho, double a, double z) {
   fdr.calc_density(electron_deriv, t);
   return electron_deriv.dsdT;
 }
-
+//---------------------------------------------------------------------------------------
 double nscool::cvion(double t, double rho, double a, double z) {
 
   double rhodrip = 4.3e11;
@@ -391,7 +393,7 @@ double nscool::cvion(double t, double rho, double a, double z) {
   double delta1 = delta * 1.0e-20;
   return nionkb * cte / delta1 / delta1 / delta1;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::cvtot(int i, double t, double rho, double aion, double zion,
                    double &cv, double &cvneutron, double &cvproton,
                    double &cvelectron, double &cvmuon, double &cvlambda,
@@ -502,7 +504,7 @@ void nscool::cvtot(int i, double t, double rho, double aion, double zion,
 
   return;
 }
-
+//---------------------------------------------------------------------------------------
 double nscool::pressure(double T, double Rho, double A, double Z) {
   double hb = 1.054588e-27;
   double kb = 1.380662e-16;
@@ -531,7 +533,7 @@ double nscool::pressure(double T, double Rho, double A, double Z) {
 
   return Pel + Pion;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::density(double T, double P, double A, double Z, double &Rho) {
 
   double eps = 1.0e-3;
@@ -549,7 +551,7 @@ void nscool::density(double T, double P, double A, double Z, double &Rho) {
 
   return;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::opacity(double T, double Rho, double &A, double &Z, double &kappa,
                      int iopacity) {
   if (iopacity == 0) {
@@ -563,7 +565,7 @@ void nscool::opacity(double T, double Rho, double &A, double &Z, double &kappa,
   }
   return;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_core_bar_pairing_supr(double yn, double yp, double &Rn1,
                                        double &Rn2, double &Rp1, double &Rp2,
                                        double &RC) {
@@ -639,7 +641,7 @@ void nscool::con_core_bar_pairing_supr(double yn, double yp, double &Rn1,
   }
   return;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_core_bar(double Temp, double kf_e, double kf_mu, double kf_p,
                           double mst_p, double Tc_p, double kf_n, double mst_n,
                           double Tc_n, int isfn, double kf_la, double mst_la,
@@ -754,7 +756,7 @@ void nscool::con_core_bar(double Temp, double kf_e, double kf_mu, double kf_p,
   }
   return;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_core_lep(double Temp, double kf_e, double kf_m, double kf_p,
                           double mst_p0, double Tc_p, double kf_sm,
                           double mst_sm0, double Tc_sm, double kf_sp,
@@ -874,7 +876,7 @@ void nscool::con_core_lep(double Temp, double kf_e, double kf_m, double kf_p,
               << ", " << lambda_e + lambda_m << std::endl;
   }
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_core(int icon_core, double debug, double Temp, double kf_e,
                       double kf_mu, double kf_p, double mst_p,
                       double Tc_p, // proton
@@ -929,7 +931,7 @@ void nscool::con_core(int icon_core, double debug, double Temp, double kf_e,
 
   return;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_crust_e_phonon_Itoh(double /*T*/, double /*rho*/, double /*A*/,
                                      double /*A1*/, double /*Z*/,
                                      double &sigma_ph, double &lambda_ph,
@@ -944,7 +946,7 @@ void nscool::con_crust_e_phonon_Itoh(double /*T*/, double /*rho*/, double /*A*/,
   nu_e_s_ph = 0.0;
   nu_e_l_ph = 0.0;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_crust_e_phonon_BY(double Temp, double rho, double A, double A1,
                                    double Z, double &sigma_, double &lambda_,
                                    double debug, double &nu_e_s, double &nu_e_l,
@@ -1033,7 +1035,7 @@ void nscool::con_crust_e_phonon_BY(double Temp, double rho, double A, double A1,
               << ", " << lambda_ << std::endl;
   }
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_env_e_phon_ion_PBHY(double T, double rho, double A, double A1,
                                      double Z, double &sigma, double &lambda,
                                      double debug, double &nu_e_s,
@@ -1104,7 +1106,7 @@ void nscool::con_env_e_phon_ion_PBHY(double T, double rho, double A, double A1,
               << ", " << lambda << std::endl;
   }
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
                      double &xnuc, double &xnuct) {
   // We replicate the big snippet. Many local variables:
@@ -1114,9 +1116,9 @@ void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
            std::pow(x, 3.0 + 3.0 * t) / (1.0 + t);
   };
 
-  std::cout << "Fri2: " << BARD << " " << Index << std::endl;
-  
-  static const double PI=3.14159265;
+  // std::cout << "Fri2: " << BARD << " " << Index << std::endl;
+
+  static const double PI = 3.14159265;
   if (Index == 30) {
     double f = std::log(1.0 + BARD / 5.0e-9);
     double Rp = 5.688 + 0.02628 * f + 0.009468 * f * f;
@@ -1130,7 +1132,7 @@ void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
     Z = PI / 0.75 * Rp * Rp * Rp * np_in * SOyam(tp, 1.0);
     Anuc = Z + Nin;
     A = Anuc;
-    std::cout << "Fri4: " << Nin << " " << Z << " " << Anuc << std::endl;
+    // std::cout << "Fri4: " << Nin << " " << Z << " " << Anuc << std::endl;
     double Rws = std::pow(A / BARD * 0.75 / PI, 0.333333);
     if (Rws < Rn) {
       std::cerr << "OYAFORM: too large Rn for outer envelope!\n";
@@ -1138,7 +1140,7 @@ void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
     }
     // final
     double aa = std::pow((A / BARD), 0.333333); // not used
-    std::cout << "Fri3: " << aa << " " << tp << std::endl;
+    // std::cout << "Fri3: " << aa << " " << tp << std::endl;
 
     double Rp0eff = std::pow((Z / PI * 0.75 / np_in), 0.333333);
     double tmp_sOy = SOyam(tp, 1.0);
@@ -1209,7 +1211,7 @@ void nscool::OYAFORM(double BARD, int Index, double &Z, double &Anuc, double &A,
     std::exit(1);
   }
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_e_phon_ion_GYP(double T, double rho, double A_in, double A1_in,
                                 double Z_in, int ifs, double &sigma,
                                 double &lambda, double debug, double &nu_e_s,
@@ -1240,7 +1242,7 @@ void nscool::con_e_phon_ion_GYP(double T, double rho, double A_in, double A1_in,
   double Z = Z_in, A1 = A1_in, A = A_in, xnuc, xnuct;
 
   OYAFORM(BARD, Index, Z, A1, A, xnuc, xnuct);
-  std::cout << "Fri1: " << xnuc << " " << Z << " " << A << std::endl;
+  // std::cout << "Fri1: " << xnuc << " " << Z << " " << A << std::endl;
   if (ifs == 0) {
     xnuc = 0.0;
     xnuct = 0.0;
@@ -1313,11 +1315,11 @@ void nscool::con_e_phon_ion_GYP(double T, double rho, double A_in, double A1_in,
     std::cout << "Exiting con_e_phon_ion_GYP: sigma, lambda= " << sigma << ", "
               << lambda << " " << nu0 << " " << nu_e_s << " " << nu_e_l
               << std::endl;
-    exit(-1);
+    // exit(-1);
   }
   return;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_crust_e_ion_Itoh(double T, double rho, double A, double A1,
                                   double Z, double &sigma, double &lambda,
                                   double &debug, double &nu_e_s,
@@ -1404,7 +1406,7 @@ void nscool::con_crust_e_ion_Itoh(double T, double rho, double A, double A1,
 
   return;
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_crust_e_imp_YU(double T, double rho, double A, double A1,
                                 double Z, double Q_imp, double &sigma,
                                 double &lambda, double debug, double &nu_e_s,
@@ -1430,7 +1432,7 @@ void nscool::con_crust_e_imp_YU(double T, double rho, double A, double A1,
               << lambda << std::endl;
   }
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_crust_ee(double T, double ne, double kfe, double &lambda,
                           double debug) {
   // From Shternin & Yakovlev, PRD74(2006) ...
@@ -1490,7 +1492,7 @@ void nscool::con_crust_ee(double T, double ne, double kfe, double &lambda,
     std::cout << "Exiting con_crust_ee: " << lambda << std::endl;
   }
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::con_crust(int icon_crust, double debug, double T, double rho,
                        double kfe, double A, double A1, double Z, double Q_imp,
                        double &sigma, double &lambda, double &nu_e_s,
@@ -1662,7 +1664,7 @@ void nscool::con_crust(int icon_crust, double debug, double T, double rho,
               << std::endl;
   }
 }
-
+//---------------------------------------------------------------------------------------
 void nscool::conduct(
     int i, double T, double rho, double A, double A1, double Z, double Q,
     double magfield, double &sigma, double &lambda, double debug,
@@ -4371,6 +4373,9 @@ void nscool::star_struct(int idec, double rhocore, double rhodrip,
                          std::vector<double> &rrho, std::vector<double> &pres,
                          std::vector<double> &dvol, std::vector<double> &emas,
                          std::vector<double> &phi) {
+
+  static const double pi = 3.1415926535;
+
   // Define zone indices: icore, idrip & isurf
   icore = 2 * ((icore - 1) / 2) + 1; // Ensure icore is od
   int idel1 = static_cast<int>(std::log10(rhocore / rhodrip) *
@@ -4381,6 +4386,9 @@ void nscool::star_struct(int idec, double rhocore, double rhodrip,
                                static_cast<double>(idec));
   idel2 = 2 * (idel2 / 2); // Ensure idel2 is even
   int isurf = idrip + idel2;
+
+  std::cout << "icore, idrip, isurf: " << icore << " " << idrip << " " << isurf
+            << std::endl;
 
   size_t jmax = nscool_tov.get_nlines();
 
@@ -4394,7 +4402,6 @@ void nscool::star_struct(int idec, double rhocore, double rhodrip,
   for (size_t j = 0; j < nscool_tov.get_nlines(); j++) {
     rad_t[j] = nscool_tov.get("radius", j) * 100.0;
     bar_t[j] = nscool_tov.get("n_baryon", j);
-    // This is energy density
     rho_t[j] = nscool_tov.get("density", j);
     pres_t[j] = nscool_tov.get("pressure", j);
     emas_t[j] = nscool_tov.get("emass", j);
@@ -4413,13 +4420,24 @@ void nscool::star_struct(int idec, double rhocore, double rhodrip,
                o2scl::exc_einval);
   }
 
+  // std::cout << "rhocore, rho_t[jcore]: " << rhocore << " " << rho_t[jcore]
+  //          << std::endl;
+
   double drho = rho_t[jcore - 1] - rho_t[jcore];
   double w1 = (rhocore - rho_t[jcore]) / drho;
   double w2 = 1.0 - w1;
+
+  // std::cout << "drho, w1, w2: " << drho << " " << w1 << " " << w2 <<
+  // std::endl;
+
   double rad_core = (w1)*rad_t[jcore - 1] + (w2)*rad_t[jcore];
   for (size_t i = 0; i <= (size_t)icore; i++) {
-    rad[i] = cbrt(((float)i) / ((float)icore)) * rad_core;
+    rad[i] = std::cbrt((float)i / (float)icore) * rad_core;
   }
+  // std::cout << "rad: " << rad[0] << " " << rad[1] << " " << rad[80] <<
+  // std::endl;
+
+  // std::cout << "radcore: " << rad_core << std::endl;
 
   // Initialize boundary conditions
   rrho[0] = rho_t[0]; // rad_t(1) -> rad_t[0]
@@ -4434,9 +4452,16 @@ void nscool::star_struct(int idec, double rhocore, double rhodrip,
       ++j;
     }
 
+    //  std::cout << "rad_t[j], rad_t[j-1], rad[i]: " << rad_t[j] << " "
+    //            << rad_t[j-1] << " " << rad[i-1] << std::endl;
+
     double delrad = rad_t[j] - rad_t[j - 1];
     double w1_interp = (rad_t[j] - rad[i]) / delrad;
     double w2_interp = 1.0 - w1_interp;
+
+    //  std::cout << "j, delrad, w1, w2: " << j << " " << delrad << " "
+    //            << w1_interp << " " << w2_interp << std::endl;
+    //  exit(-1);
 
     rrho[i] = w1_interp * rho_t[j - 1] + w2_interp * rho_t[j];
     emas[i] = w1_interp * emas_t[j - 1] + w2_interp * emas_t[j];
@@ -4444,13 +4469,13 @@ void nscool::star_struct(int idec, double rhocore, double rhodrip,
     pres[i] = w1_interp * pres_t[j - 1] + w2_interp * pres_t[j];
 
     if (i == 1) {
-      dvol[i] = (4.0 / 3.0) * o2scl_const::pi * std::pow(rad[i], 3);
+      dvol[i] = (4.0 / 3.0) * pi * std::pow(rad[i], 3);
     } else {
       double avg_rad_sq = std::pow((rad[i - 1] + rad[i]) / 2.0, 2);
       double delta_rad = rad[i] - rad[i - 1];
       double sqrt_term = std::sqrt(1.0 - 2.92e5 * (emas[i - 1] + emas[i]) /
                                              (rad[i - 1] + rad[i]));
-      dvol[i] = 4.0 * o2scl_const::pi * avg_rad_sq * delta_rad / sqrt_term;
+      dvol[i] = 4.0 * pi * avg_rad_sq * delta_rad / sqrt_term;
     }
 
     // Update j
@@ -4499,7 +4524,7 @@ void nscool::star_struct(int idec, double rhocore, double rhodrip,
     double delta_rad = rad[i] - rad[i - 1];
     double sqrt_term = std::sqrt(1.0 - 2.92e5 * (emas[i - 1] + emas[i]) /
                                            (rad[i - 1] + rad[i]));
-    dvol[i] = 4.0 * o2scl_const::pi * avg_rad_sq * delta_rad / sqrt_term;
+    dvol[i] = 4.0 * pi * avg_rad_sq * delta_rad / sqrt_term;
 
     // Update j
     --j;

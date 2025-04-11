@@ -1,5 +1,6 @@
 #include "nscool.h"
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <o2scl/vector.h>
 #include <vector>
@@ -309,7 +310,7 @@ public:
     eta = std::max(1.0e-50, eta);
     eta0 = std::max(1.0e-50, eta0);
     // READ STAR STRUCTURE LAYOUT: -----------------------------------------
-    rhocore = 1.6e14;
+    rhocore = 159999997247488; // 1.6e14 somehow fortran has this value
     rhodrip = 4.0e11;
     rhoenv = 1.0e8;
     rhosurf = 1.0e10;
@@ -319,9 +320,22 @@ public:
     // ---------------------------------------------------------------------
   }
 
-  void NSCool(int irank, int iret) {
+  void vec_out(const std::vector<double> &vec) {
+    int n = imax;
+    if (n == 0) {
+      std::cout << "Vector is empty!" << std::endl;
+      return;
+    }
 
-    debug = 1;
+    for (int i = 0; i < 10; ++i) {
+      int index = i * (n - 1) / 9; // Ensures even spacing
+      std::cout << vec[index] << " ";
+    }
+    std::cout << std::endl;
+  }
+
+  void NSCool(int irank, int iret) {
+    std::cout << std::fixed << std::setprecision(10);
 
     if (debug >= 1)
       std::cout << "Initializing, isize: " << debug << " " << isize
@@ -340,8 +354,8 @@ public:
     star_struct(idec, rhocore, rhodrip, rhoenv, rhosurf, imax, icore, idrip,
                 ienv, rad, rrho, pres, dvol, emas, phi);
 
-    // std:: cout << "rad: "; o2scl::vector_out(std::cout, rad, true);
-    // std:: cout << "rrho: "; o2scl::vector_out(std::cout, rrho, true);
+    // std:: cout << "rad: "; vec_out(rad);
+    // std:: cout << "rrho: "; vec_out(rrho);
     // std:: cout << "pres: "; o2scl::vector_out(std::cout, pres, true);
     // std:: cout << "dvol: "; o2scl::vector_out(std::cout, dvol, true);
     // std:: cout << "emas: "; o2scl::vector_out(std::cout, emas, true);
@@ -407,53 +421,33 @@ public:
         tcd1.resize(imax + 1), tcd2.resize(imax + 1), tcd3.resize(imax + 1),
         tcs1.resize(imax + 1), tcs2.resize(imax + 1), tcs3.resize(imax + 1);
 
-    qnu.resize(imax + 1, 0.0), qnu1.resize(imax + 1, 0.0);
-    qeebrem.resize(imax + 1, 0.0);
-    qnpb.resize(imax + 1, 0.0);
-    qplasma.resize(imax + 1, 0.0);
-    qsynch.resize(imax + 1, 0.0);
-    qbubble.resize(imax + 1, 0.0);
-    qpair.resize(imax + 1, 0.0);
-    qphoto.resize(imax + 1, 0.0);
-    qbrem_nn.resize(imax + 1, 0.0);
-    qmurca_nucl.resize(imax + 1, 0.0);
-    qbrem_nucl.resize(imax + 1, 0.0);
-    qmurca_hyp.resize(imax + 1, 0.0);
-    qbrem_hyp.resize(imax + 1, 0.0);
-    qdurca_np.resize(imax + 1, 0.0);
-    qdurca_lap.resize(imax + 1, 0.0);
-    qdurca_smn.resize(imax + 1, 0.0);
-    qdurca_smla.resize(imax + 1, 0.0);
-    qdurca_sms0.resize(imax + 1, 0.0);
-    qfast.resize(imax + 1, 0.0);
-    qdurca_q.resize(imax + 1, 0.0);
-    qmurca_q.resize(imax + 1, 0.0);
-    qpbf_n1s0.resize(imax + 1, 0.0);
-    qpbf_n3p2.resize(imax + 1, 0.0);
-    qpbf_p1s0.resize(imax + 1, 0.0);
-    qpbf_q.resize(imax + 1, 0.0);
+    qnu.resize(imax + 1, 0.0), qnu1.resize(imax + 1, 0.0),
+        qeebrem.resize(imax + 1, 0.0), qnpb.resize(imax + 1, 0.0),
+        qplasma.resize(imax + 1, 0.0), qsynch.resize(imax + 1, 0.0),
+        qbubble.resize(imax + 1, 0.0), qpair.resize(imax + 1, 0.0),
+        qphoto.resize(imax + 1, 0.0), qbrem_nn.resize(imax + 1, 0.0),
+        qmurca_nucl.resize(imax + 1, 0.0), qbrem_nucl.resize(imax + 1, 0.0),
+        qmurca_hyp.resize(imax + 1, 0.0), qbrem_hyp.resize(imax + 1, 0.0),
+        qdurca_np.resize(imax + 1, 0.0), qdurca_lap.resize(imax + 1, 0.0),
+        qdurca_smn.resize(imax + 1, 0.0), qdurca_smla.resize(imax + 1, 0.0),
+        qdurca_sms0.resize(imax + 1, 0.0), qfast.resize(imax + 1, 0.0),
+        qdurca_q.resize(imax + 1, 0.0), qmurca_q.resize(imax + 1, 0.0),
+        qpbf_n1s0.resize(imax + 1, 0.0), qpbf_n3p2.resize(imax + 1, 0.0),
+        qpbf_p1s0.resize(imax + 1, 0.0), qpbf_q.resize(imax + 1, 0.0);
 
     heat.resize(imax + 1, 0.0), heat1.resize(imax + 1, 0.0),
         qqq.resize(imax + 1, 0.0), qqq1.resize(imax + 1, 0.0);
 
     cv.resize(imax + 1, 0.0), cv1.resize(imax + 1, 0.0),
-        cv_n.resize(imax + 1, 0.0);
-    cv_p.resize(imax + 1, 0.0);
-    cv_e.resize(imax + 1, 0.0);
-    cv_m.resize(imax + 1, 0.0);
-    cv_l.resize(imax + 1, 0.0);
-    cv_sm.resize(imax + 1, 0.0);
-    cv_s0.resize(imax + 1, 0.0);
-    cv_sp.resize(imax + 1, 0.0);
-    cv_q.resize(imax + 1, 0.0);
-    cv_ion.resize(imax + 1, 0.0);
+        cv_n.resize(imax + 1, 0.0), cv_p.resize(imax + 1, 0.0),
+        cv_e.resize(imax + 1, 0.0), cv_m.resize(imax + 1, 0.0),
+        cv_l.resize(imax + 1, 0.0), cv_sm.resize(imax + 1, 0.0),
+        cv_s0.resize(imax + 1, 0.0), cv_sp.resize(imax + 1, 0.0),
+        cv_q.resize(imax + 1, 0.0), cv_ion.resize(imax + 1, 0.0);
 
-    fp.resize(imax + 1, 0.0);
-    fq.resize(imax + 1, 0.0);
-    fr.resize(imax + 1, 0.0);
-    fp1.resize(imax + 1, 0.0);
-    fq1.resize(imax + 1, 0.0);
-    fr1.resize(imax + 1, 0.0);
+    fp.resize(imax + 1, 0.0), fq.resize(imax + 1, 0.0),
+        fr.resize(imax + 1, 0.0), fp1.resize(imax + 1, 0.0),
+        fq1.resize(imax + 1, 0.0), fr1.resize(imax + 1, 0.0);
 
     dfp.resize(imax + 1, 0.0), dfq.resize(imax + 1, 0.0),
         dfr.resize(imax + 1, 0.0);
@@ -665,9 +659,9 @@ public:
     if (debug >= 1.0) {
       std::cout << "Calculating initial L profile" << std::endl;
     }
-    debug = 1.2;
+    // debug = 1.0;
     for (int i = imax; i >= 1; i -= 2) {
-      std::cout << i << " ";
+      // std::cout << i << " ";
       conduct(i, temp[i] / ephi[i], rrho[i], a_cell[i], a_ion[i], z_ion[i],
               qimp, nbfield2[i], sig, lambda[i], debug, nu_e_s, nu_e_l,
               icon_crust, icon_core, rhodrip, rhocore, kfe, kfm, kfn, kfp, kfla,
@@ -681,11 +675,12 @@ public:
       fp[i] = (lambda[i] + 4.0 * acd * std::pow(temp[i] / ephi[i], 3)) *
               bar[i] / lsol;
     }
-    exit(-1);
+    // exit(-1);
     //  These numbers are slightly off, FIX THIS FIRST
-    //  o2scl::vector_out(std::cout, lambda, true);
-    //  o2scl::vector_out(std::cout, ephi, true); o2scl::vector_out(std::cout,
-    //  kappa, true); o2scl::vector_out(std::cout, fp, true); exit(-1);
+    // std:: cout << "lamba: ";  vec_out(lambda);
+    //  vec_out(ephi); o2scl::vector_out(std::cout,
+    //  kappa, true); o2scl::vector_out(std::cout, fp, true); 
+    // exit(-1);
 
     lum[0] = 0.0;
     for (int i = 2; i <= imax - 1; i += 2) {
@@ -1529,7 +1524,7 @@ public:
           dtlimit = t_acc1 / 20.0;
         }
       }
-      std::cout << "It was working upto this" << std::endl;
+      // std::cout << "It was working upto this" << std::endl;
       // Heat deposition--------------------------------------------------
       if (i_heat_deposit == 1) {
         double t_slow = std::max(dtime, 1000.0 * del_t_dep);
@@ -1547,9 +1542,9 @@ public:
       if ((sign_l * teffective) < tempmin) {
         return;
       }
-      std::cout << "End of one loop" << std::endl;
+      // std::cout << "End of one loop" << std::endl;
     }
-    std::cout << "Working for now" << std::endl;
+    // std::cout << "Working for now" << std::endl;
     return;
   }
 };

@@ -464,7 +464,7 @@ c     Get the type and size of nuclei using Gnedin et al subroutine:
          Index=30
       end if
       call OYAFORM(BARD,Index,Z,A1,A,xnuc,xnuct)
-      print *,'Fri1:',xnuc,Z,A
+c      print *,'Fri1:',xnuc,Z,A
       if (ifs.eq.0) then
          xnuc= 0.d0
          xnuct=0.d0
@@ -538,7 +538,7 @@ c     Collisional frequencies:
       nu_e_l=nu_l
       if (debug.eq.1.2d0) print *,'Exiting con_crust_e_phon_ion 2:',
      1     ' sigma, lambda=',sigma,lambda,nu0,nu_e_s,nu_e_l
-      stop
+c      stop
       return
       end
 c     *********************************************************************
@@ -616,7 +616,7 @@ c
      +     9.*x**(3.+2.*t)/(3.+2.*t)-x**(3.+3.*t)/(1.+t)
 *     The above factor corrects the volume for nucl.shape acc.to Oyamatsu:
 *     nn_in=nn_out+dn_n*(1-(r/Rn)^t); x=min(1,Rws/Rn); same for protons.
-      print *,'Fri2:',BARD,Index
+c      print *,'Fri2:',BARD,Index
       if (Index.eq.30) then     ! {densities lower than the neutron drip}
          f=dlog(1.d0+BARD/5.0d-9)
          Rp=5.688+0.02628*f+0.009468*f*f ! max.proton core radius
@@ -631,7 +631,7 @@ c
          Z=PI/.75*Rp**3*np_in*SOyam(tp,1.d0)
          Anuc=Z+Nin             ! {nucleons within a nucleus}
          A=Anuc
-         print *,'Fri4:',Nin,Z,Anuc
+c         print *,'Fri4:',Nin,Z,Anuc
          Rws=(A*.75/PI/BARD)**.333333
          if (Rws.lt.Rn) stop'OYAFORM: too large Rn for outer envelope!'
          aa=(A/BARD)**.333333   !  {cube size}
@@ -657,7 +657,7 @@ c
       else
          stop'OYAFORM: invalid Index'
       endif
-      print *,'Fri3:',aa,tp
+c      print *,'Fri3:',aa,tp
       Rp0eff=(Z/PI*.75/np_in)**.333333
       Rp2eff=Rp*dsqrt((1.-15./(5.+tp)+15./(5.+2.*tp)-5./(5.+3.*tp))/
      /     SOyam(tp,1.d0))

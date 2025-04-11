@@ -28,6 +28,8 @@ c     DP: Define zone indices: icore, idrip & isurf
       idel2=2*(idel2/2)         ! Makes sure idel2 is even
       isurf=idrip+idel2
 
+      print *,"icore, iddrip, isurf: ",icore,idrip,isurf
+
 c     AWS: Read TOV profile. Because of the 'dimension' line above,
 c     arrays rad_t, bar_t, rho_t, pres_t, emas_t, and phi_t are unit
 c     indexed.
@@ -47,10 +49,15 @@ c$$$  end if
 c$$$  end do
 c$$$  c     ****
       
+c      print *, "rhocore, rho_t[jcore]: ",rhocore,rho_t(jcore+1)
+
 c     DP: Get the core radius exactly:
       drho=rho_t(jcore)-rho_t(jcore+1)
       w1=(rhocore-rho_t(jcore+1))/drho
       w2=1.d0-w1
+
+c      print *,"drho, w1, w2: ",drho,w1,w2
+
       rad_core=w1*rad_t(jcore)+w2*rad_t(jcore+1)
 c     
 c     Define Star grid: ****************************************
@@ -61,6 +68,10 @@ c     CORE: zoning with (approximate) constant volume: *********
       do i=0,icore
          rad(i)=(float(i)/float(icore))**(1./3.) * rad_core
       end do
+
+c      print *,"rad: ",rad(0),rad(1),rad(80)
+
+c      print *,"radcore: ",rad_core
 
 c     debar(0)=0.d0
 c     bar(0)=bar_t(1)! bar is better defined in get_*_chemistry, from the EOS
@@ -73,9 +84,12 @@ c     bar(0)=bar_t(1)! bar is better defined in get_*_chemistry, from the EOS
       do i=1,icore
  500     j=j+1
          if (rad_t(j).lt.rad(i)) goto 500
+c         print *,"rad_t[j], rad_t[j-1], rad[i]: ",rad_t(j),rad_t(j-1),rad(i)
          delrad=rad_t(j)-rad_t(j-1)
          w1=(rad_t(j)-rad(i))/delrad
          w2=1.d0-w1
+c         print *,"j, delrad, w1, w2: ",j,delrad,w1,w2
+c         stop !
 c     bar(i) =w1*bar_t(j-1) +w2*bar_t(j)     ! bar is better defined in get_*_chemistry, from the EOS
          rrho(i)=w1*rho_t(j-1) +w2*rho_t(j)
          emas(i)=w1*emas_t(j-1)+w2*emas_t(j)

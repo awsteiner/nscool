@@ -314,7 +314,12 @@ emu_test: emu_test.o
 emu_test.o: emu_test.cpp 
 	$(LMPI_CXX) $(LMPI_CFLAGS) -o emu_test.o -c emu_test.cpp 
 
+util.o: util.cpp
+	$(LMPI_CXX) $(LMPI_CFLAGS) -o util.o -c util.cpp
 
+util: util.o
+	$(LMPI_CXX) $(LMPI_CFLAGS) -o util util.o \
+	$(LIBS)
 
 clean:
 	-rm -f *.o rs rs_nompi rs_nompi_omp \
@@ -587,10 +592,10 @@ nomma:
 		-set file_update_time 1800 \
 		-set aff_inv 1 -set n_walk 966 \
 		-set mcmc_verbose 2 -set verbose 1 -set max_time 432000 \
-		-initial-point-best ../data/combined_emu_last 1.0e-6 6 \
+		-initial-point-last "../data/nomma8_<rank>_out" \
 		-set no_ins 1 -set no_sxrt 1 -set no_qlmxb 1 \
 		-set no_ligo 1 -set no_prex 1 \
-	  	-set prefix ../data/nomma2 -mcmc > nomma.out 2>&1 &
+	  	-set prefix ../data/nomma9 -mcmc > nomma.out 2>&1 &
 
 test_threads:
 	mpirun -np 1 ./test -threads 2 
@@ -733,4 +738,10 @@ check_corr:
 		mf_00291 eta_00291 mf_1808 eta_1808 mf_1905 \
 		eta_1905 log10_mdot_1905 \
 		-internal ../data/kde_input_all
+
+# Concatenate smartly
+concat:
+	nline1=$(acol -read ../data/nomma2_0_out -nlines) \
+	@echo $nline1 
+	
 
