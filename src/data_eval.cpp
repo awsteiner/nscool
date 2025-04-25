@@ -19,7 +19,6 @@ data_eval::data_eval() : nw("./") {
 
   // Tell the cooling code to use parameterized gaps instead of internal gap
   // functions
-
   nw.sfn1s0 = 1;
   nw.sfp1s0 = 150;
   nw.sfn3p2 = 150;
@@ -91,6 +90,7 @@ data_eval::data_eval() : nw("./") {
   nst.def_tov.err_nonconv = false;
   nst.def_tov.def_solver.err_nonconv = false;
   nst.def_tov.def_solver.def_jac.err_nonconv = false;
+  nst.def_eos_tov.err_nonconv = false;
 
   // Set convergence error flags for nucleus_rmf object
   rn.err_nonconv = false;
@@ -727,10 +727,8 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
     return 19;
   }
 
-  nst.def_eos_tov.err_nonconv = false;
   int cn_ret = 0;
-  // nst.verbose=2; nst.def_eos_tov.err_nonconv=true; nst.def_eos_tov.verbose=1;
-  // nst.err_nonconv=true;
+  nst.verbose=0; nst.def_eos_tov.verbose=0;
   nst.def_tov.ang_vel = true;
   cn_ret = nst.calc_nstar();
   dat[dvi["tov_fail"]] = 0.0;
@@ -738,7 +736,7 @@ int data_eval::point(size_t nv, const ubvector &pars, double &log_weight,
   if (cn_ret != 0) {
     dat[dvi["tov_fail"]] = 1.0;
     if (verbose > 0) {
-      std::cout << "Fail: Object nstar_cold failed to compute M-R curve."
+      std::cout << "Fail: Object nstar_cold failed to compute M-R curve. " << cn_ret 
                 << std::endl;
     }
     if (err_as_small_wgt) {

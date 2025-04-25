@@ -746,6 +746,7 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
   if (false) {
     // Reset initial points to that from IUFSU model
     eos_had_rmf rmf;
+    std::cout << "loading rmf EoS from file" << std::endl;
     o2scl_hdf::rmf_load(rmf, "IUFSU");
     mct.initial_points[0][pvi["b"]] = rmf.b;
     mct.initial_points[0][pvi["c"]] = rmf.c;
@@ -764,6 +765,10 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     mct.initial_points[0][pvi["a6"]] = rmf.a6;
     mct.initial_points[0][pvi["b2"]] = rmf.b2;
     mct.initial_points[0][pvi["b3"]] = rmf.b3;
+
+    std::cout << "pars[b]=" << rmf.b << std::endl; 
+    std::cout << "pars[c]=" << rmf.c << std::endl; 
+    std::cout << "pars[cr]=" << rmf.cr << std::endl; 
   }
 
   // Function objects for the MCMC class and for each OpenMP thread
