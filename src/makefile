@@ -585,19 +585,19 @@ sync:
 bmark:
 	mpirun -np 1 ./rs_emu -threads 1 \
 		-set file_update_time 1800 \
-		-set mcmc_verbose 2 -set verbose 1 -set max_iters 1 \
-		-initial-point-best ../data/combined_emu_last 1.0e-6 6 \
+		-set mcmc_verbose 2 -set verbose 2 -set max_iters 1 \
+		-initial-point-best ../data/eosmay_final 1.0e-6 5 \
 	  -set prefix ../data/bmark -mcmc
 
 nomma:
 	mpirun -np 4 ./rs_emu -threads 1 \
 		-set file_update_time 1800 \
-		-set aff_inv 1 -set n_walk 101 \
+		-set aff_inv 1 -set n_walk 87 \
 		-set mcmc_verbose 2 -set verbose 1 -set max_time 86400 \
-		-initial-point-last "../data/init_nomma" \
+		-initial-point-last "../data/eosmay5_<rank>_out" \
 		-set no_ins 1 -set no_sxrt 1 -set no_qlmxb 1 \
 		-set no_ligo 1 -set no_prex 1 -set no_nuclei 1 \
-	  	-set prefix ../data/eosonly -mcmc > nomma.out 2>&1 &
+	  	-set prefix ../data/eosmay6 -mcmc > nomma.out 2>&1 &
 
 test_rmf:
 	mpirun -np 1 ./rs_emu -threads 1 \

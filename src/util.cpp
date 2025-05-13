@@ -67,8 +67,8 @@ public:
 int main(int argc, char *argv[]) {
   
   cout.setf(ios::scientific);
-  std::string filename = argv[1];
-  std::string param = argv[2];
+  // std::string filename = argv[1];
+  std::string param = argv[1];
 
   exc e;
 
@@ -95,16 +95,6 @@ int main(int argc, char *argv[]) {
   bimodal_vec.push_back(bimodal_func);
   vector<fill_funct> fill_vec;
   fill_vec.push_back(fill_func);
-  
-  mct.aff_inv=true;
-  mct.n_walk=3;
-
-  // Create and allocate data objects
-  size_t vdat_size = 2*mct.n_walk*mct.n_threads;
-  vector<std::vector<double> > data_vec(vdat_size);
-  cout << vdat_size << endl;
-  //data_vec[0].resize(mct.n_walk);
-  //data_vec[1].resize(mct.n_walk);
 
   // Set parameter names and units
   vector<string> pnames={"x"};
@@ -114,13 +104,41 @@ int main(int argc, char *argv[]) {
   mct.set_names_units(pnames,punits,dnames,dunits);
 
   // Set MCMC parameters
-  
+  mct.aff_inv=true;
+  mct.n_walk=3;
   mct.def_stepper->step_fac.resize(1);
   mct.def_stepper->step_fac[0]=2.0;
-  mct.max_iters=20000;
+  mct.max_iters=100000;
   mct.prefix="ex_mcmc";
   //mct.table_prealloc=mct.max_iters/3;
-  cout << "working till here?" << endl;
+
+  // Create and allocate data objects
+  size_t vdat_size = 2*mct.n_walk*mct.n_threads;
+  vector<std::vector<double> > data_vec(vdat_size);
+  for(size_t i=0;i<vdat_size;i++){
+    data_vec[i].resize(1);
+  }
+
+  // Compute exact value of <x^2>. The function format is a bit
+  // different so we use lambda expressions to construct the
+  // functions for the integrators. 
+  inte_qag_gsl<> iqg;
+  funct f=[e,data_vec](double x) mutable -> double {
+    ubvector u(1); double lw; u[0]=x; 
+    e.bimodal(1,u,lw,data_vec[0]); return exp(lw); };
+  funct fx2=[e,data_vec](double x) mutable -> double {
+    ubvector u(1); double lw; u[0]=x; 
+    e.bimodal(1,u,lw,data_vec[0]); return data_vec[0][0]*exp(lw); };
+  cout << iqg.integ(fx2,low_bimodal[0],high_bimodal[0]) << " "
+       << iqg.integ(f,low_bimodal[0],high_bimodal[0]) << endl;
+  double exact=iqg.integ(fx2,low_bimodal[0],high_bimodal[0])/
+    iqg.integ(f,low_bimodal[0],high_bimodal[0]);
+  cout << "exact: " << exact << endl;
+  
+  cout << "──────────────────────────────────────────────────────────"
+       << endl;
+  cout << "Affine-invariant sampling MCMC example with a bimodal distribution:" << endl;
+
   // Perform MCMC
   mct.mcmc_fill(1,low_bimodal,high_bimodal,bimodal_vec,fill_vec,
                 data_vec);
@@ -131,66 +149,60 @@ int main(int argc, char *argv[]) {
 
   // Get the MCMC results
   shared_ptr<table_units<> > t=mct.get_table();
+  size_t nw = mct.n_walk;
 
-  if(false){
-
-  // Read the preliminary data from a file
-  hdf_file hf;
-  hf.open(filename);
-  table_units<> tab_in;
-  size_t nw;
-  hdf_input(hf,tab_in,"markov_chain_0");
-  hf.get_szt("n_walk",nw);
-  hf.close();
-
+  // Remove empty rows from table
+  t->delete_rows_func("mult<0.5");
+  
+  
   vector<vector<double>> xall;
   xall.resize(nw);
   cout << "number of walkers: " << nw << endl;
   table_units<> gr_tab;
-  gr_tab.set_nlines(tab_in.get_nlines()/nw);
-  gr_tab.line_of_names("gelman_rubin_stat");
-  
-  for(size_t j=0;j<tab_in.get_nlines()/nw;j++) {
+  gr_tab.set_nlines(t->get_nlines()/nw);
+  gr_tab.line_of_names("gr");
+  size_t minx;
+
+  // Create seperate MCMC chains from table
+  for(size_t j=0;j<t->get_nlines();j++) {
     for(size_t i=0;i<nw;i++) {
-      xall[i].push_back(tab_in.get(param,j+i));
+      if(t->get("walker",j)==nw){
+        xall[i].push_back(t->get(param,j));
+      }
+      minx=std::min({xall[0].size(),xall[1].size(),xall[2].size()});
     }
-    if(j>2) {
+    // Compute Gelman-Rubin Statistics
+    if(minx>2) {
       double gr=mult_vector_gelman_rubin<vector<double>,double>(xall,0);
-      gr_tab.set("gelman_rubin_stat", j-3, gr);
-      // std::cout << "Gelman rubin statistics: " << gr << std::endl;
+      gr_tab.set("gr", j-3, gr);
     }
   }
 
-  hf.open_or_create("gr.o2");
-  hdf_output(hf, gr_tab, "gr_tab");
-  hf.close();
-
-  // Remove empty rows from table.
-  tab_in.delete_rows_func("mult<0.5");
-
   // Compute the autocorrelation length
   std::vector<double> ac, ftom;
-  o2scl::vector_autocorr_vector_mult(tab_in.get_nlines(),
-                                     tab_in[param],tab_in["mult"],ac);
+  o2scl::vector_autocorr_vector_mult(t->get_nlines(),
+            (*t)[param],(*t)["mult"],ac);
   size_t ac_len=o2scl::vector_autocorr_tau(ac,ftom);
   
   // Create a separate table of statistically independent samples
   table_units<> indep;
-  copy_table_thin_mcmc(ac_len,tab_in,indep,"mult");
+  copy_table_thin_mcmc(ac_len,*t,indep,"mult");
   
   cout << "Autocorrelation length, effective sample size: "
        << ac_len << " " << indep.get_nlines() << endl;
   
   // Write these samples to a file
+  hdf_file hf;
   hf.open_or_create("../data/util.o2");
-  hdf_output(hf,tab_in,"mcmc");
+  hdf_output(hf,*t,"mcmc");
   hdf_output(hf,indep,"indep");
+  hdf_output(hf, gr_tab, "gr_tab");
   // hf.setd_vec("q_next",local_stepper->vq_next);
   // hf.setd_vec("w_next",local_stepper->vw_next);
   hf.close();
 
   // Compute the average of the correlated samples for comparison
-  double avg2=vector_mean(tab_in.get_nlines(),(tab_in)[param]);
+  double avg2=vector_mean(t->get_nlines(),(*t)[param]);
   cout << "Average of correlated samples: " << avg2 << endl;
   
   // Use the independent samples to compute the final integral and
@@ -205,6 +217,5 @@ int main(int argc, char *argv[]) {
   // cout << "Absolute difference: " << fabs(avg-exact) << endl;
   cout << "Uncertainty in the average: "
        << std/sqrt(indep.get_nlines()) << endl;
-  }
 
 }
