@@ -1861,7 +1861,7 @@ int mcmc_wrapper::make_gaussian(std::vector<std::string> &sv, bool itive_com) {
       cout << cols[i] << " " << peak[i] << " " << covar(i, i) << endl;
       covar(i, i) *= covar(i, i);
     } else {
-      peak[i] = o2scl::vector_mean<mat_col_t>(t.get_nlines(), col);
+      peak[i] = o2scl::vector_mean<mat_col_t,double>(t.get_nlines(), col);
       // Square standard deviation
       covar(i, i) = o2scl::vector_stddev<mat_col_t>(t.get_nlines(), col);
       cout << cols[i] << " " << peak[i] << " " << covar(i, i) << endl;
@@ -2220,7 +2220,8 @@ int mcmc_wrapper::check_limits(std::vector<std::string> &sv, bool itive_com) {
   t.delete_rows_func("log_wgt<(-700) || Mns_max>3 || abs(mult)<0.5");
 
   for (size_t i = 0; i < n_params; i++) {
-    double mean = vector_mean(t.get_nlines(), t[t.get_column_name(i + 5)]);
+    double mean = vector_mean<vector<double>,double>
+      (t.get_nlines(), t[t.get_column_name(i + 5)]);
     // cant use sd b/c it's defined elsewhere
     double sd_loc = vector_stddev(t.get_nlines(), t[t.get_column_name(i + 5)]);
     double min = vector_min_value<vector<double>, double>(
