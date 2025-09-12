@@ -24,6 +24,17 @@ c          - icore, idrip and ienv should also be odd
 c          - imin=0:
 c            Lum is defined in the center of the star and Lum(0)=0
 c *********************************************************************
+      subroutine vec_out(vec, size)
+        implicit none
+        integer, intent(in) :: size
+        real(8), dimension(size), intent(in) :: vec
+        integer :: i, index
+
+        do i = 0, 9
+            index = i * (size - 1) / 9 + 1 ! Fortran arrays start from 1
+            print *, "Index", index, ": ", vec(index)
+        end do
+      end 
 
       subroutine NSCool(irank,iret,neebrem_logt,neebrem_nalpha,
      1     neebrem_n2,sf_lgtau1,sf_lgtau2,sf_lgr,sf_lgr2)
@@ -595,8 +606,9 @@ c     get_core_chemistry MUST be called BEFORE get_crust_chemistry
       call grid(irank,idec,rhocore,rhodrip,rhoenv,rhosurf,
      1     imax,icore,idrip,ienv,rad,rrho,pres,dvol,emas,phi)
 
+c      call vec_out(rad,imax)
 c      print *, "rad", rad(0:imax)
-c      print *, "rrho", rrho(0:imax)
+c      call vec_out(rrho,imax)
 c      print *, "pres", pres(0:imax)
 c      print *, "dvol", dvol(0:imax)
 c      print *, "emas", emas(0:imax)
@@ -822,9 +834,9 @@ c      stop  !
 c *********************************************************************
 
       if (debug.ge.1.) print *,'Calculating initial L profile'
-      debug=1.2d0
+c      debug=1.2d0
       do i=imax,1,-2
-         print *, i
+c         print *, i
          call conduct(i,temp(i)/ephi(i),rrho(i),
      1        a_cell(i),a_ion(i),z_ion(i),qimp,
      2        nbfield2(i),
@@ -838,7 +850,7 @@ c *********************************************************************
          acd=7.56d-15*c/(3.d0*kappa(i)*rrho(i))
          fp(i)=(lambda(i)+4.d0*acd*(temp(i)/ephi(i))**3)*bar(i)/lsol
       end do
-      stop !
+c      stop !
 c      print *, "lambda", lambda(0:imax)
 c      print *, "ephi", ephi(0:imax)
 c      print *, "kappa", kappa(0:imax)
@@ -1418,19 +1430,19 @@ c     2              ephi(i),dephi(i),heat1(i))
      2        *(dlog(rrho1(i))-dlog(orrho(i)))/dtime*contraction
       end do
 
-      print *, "fp", fp(0:imax)
-      print *, "------------------"
-      print *, "fq", fq(0:imax)
-      print *, "------------------"
-      print *, "fr", fr(0:imax)
-      print *, "------------------"
-      print *, "dtemp", dtemp(0:imax)
-      print *, "------------------"
-      print *, "nlum", nlum(0:imax)
-      print *, "------------------"
-      print *, "dlum", dlum(0:imax)
-      print *, "------------------"
-      stop  !      
+c      print *, "fp", fp(0:imax)
+c      print *, "------------------"
+c      print *, "fq", fq(0:imax)
+c      print *, "------------------"
+c      print *, "fr", fr(0:imax)
+c      print *, "------------------"
+c      print *, "dtemp", dtemp(0:imax)
+c      print *, "------------------"
+c      print *, "nlum", nlum(0:imax)
+c      print *, "------------------"
+c      print *, "dlum", dlum(0:imax)
+c      print *, "------------------"
+c      stop  !      
 
 c *********************************************************************
 c ***** Calculate the derivatives of fp,fq & fr ***********************
@@ -1554,9 +1566,9 @@ c *********************************************************************
       end do
       dell(0)=0.d0     ! This is the inner boundary condition !
 
-      print *, "delt", delt(0:imax)
-      print *, "dell", dell(0:imax)
-      stop  !
+c      print *, "delt", delt(0:imax)
+c      print *, "dell", dell(0:imax)
+c      stop  !
 
       if (debug.gt.0.4 .and. debug.lt.0.6) then
          print '(2x,a,i4,1x,i4,1x,E10.3,1x,E10.3)',

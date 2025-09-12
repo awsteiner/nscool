@@ -34,8 +34,10 @@ LCFLAGS = -I/usr/local/hdf5/include \
 	-Wall -Wno-unused -Wshadow -Wno-deprecated-declarations \
 	-DO2SCL_NO_BOOST_MULTIPRECISION
 LCFLAGS_OMP = -I/usr/local/hdf5/include \
-	-DNO_MPI -DO2SCL_PYTHON \
-	-fopenmp \
+	-I/usr/lib/python3.13/site-packages/numpy/_core/include \
+	-DNO_MPI -DO2SCL_PYTHON -O3 \
+	-DO2SCL_PLAIN_HDF5_HEADER -DO2SCL_HDF5_COMP \
+	-I/usr/local/include -fopenmp \
 	-I/usr/include/python3.13 \
 	-Wall -Wno-unused -Wshadow -Wno-deprecated-declarations \
 	-DO2SCL_NO_BOOST_MULTIPRECISION
@@ -314,7 +316,12 @@ emu_test: emu_test.o
 emu_test.o: emu_test.cpp 
 	$(LMPI_CXX) $(LMPI_CFLAGS) -o emu_test.o -c emu_test.cpp 
 
+util.o: util.cpp
+	$(LCXX) $(LCFLAGS_OMP) -o util.o -c util.cpp
 
+util: util.o
+	$(LCXX) $(LCFLAGS_OMP) -o util util.o \
+	$(LIBS)
 
 clean:
 	-rm -f *.o rs rs_nompi rs_nompi_omp \
@@ -578,19 +585,28 @@ sync:
 bmark:
 	mpirun -np 1 ./rs_emu -threads 1 \
 		-set file_update_time 1800 \
-		-set mcmc_verbose 2 -set verbose 1 -set max_iters 1 \
-		-initial-point-best ../data/combined_emu_last 1.0e-6 6 \
+		-set mcmc_verbose 2 -set verbose 2 -set max_iters 1 \
+		-initial-point-best ../data/eosmay_final 1.0e-6 5 \
 	  -set prefix ../data/bmark -mcmc
 
 nomma:
 	mpirun -np 4 ./rs_emu -threads 1 \
 		-set file_update_time 1800 \
-		-set aff_inv 1 -set n_walk 966 \
-		-set mcmc_verbose 2 -set verbose 1 -set max_time 432000 \
-		-initial-point-best ../data/combined_emu_last 1.0e-6 6 \
+		-set aff_inv 1 -set n_walk 87 \
+		-set mcmc_verbose 2 -set verbose 1 -set max_time 86400 \
+		-initial-point-last "../data/eosmay5_<rank>_out" \
+		-set no_ins 1 -set no_sxrt 1 -set no_qlmxb 1 \
+		-set no_ligo 1 -set no_prex 1 -set no_nuclei 1 \
+	  	-set prefix ../data/eosmay6 -mcmc > nomma.out 2>&1 &
+
+test_rmf:
+	mpirun -np 1 ./rs_emu -threads 1 \
+		-set file_update_time 1800 \
+		-set mcmc_verbose 2 -set verbose 2 -set max_iters 1 \
+		-initial-point-last "../data/nomma3_0_out" \
 		-set no_ins 1 -set no_sxrt 1 -set no_qlmxb 1 \
 		-set no_ligo 1 -set no_prex 1 \
-	  	-set prefix ../data/nomma2 -mcmc > nomma.out 2>&1 &
+	  	-set prefix ../data/SFHx -mcmc 
 
 test_threads:
 	mpirun -np 1 ./test -threads 2 
@@ -733,4 +749,10 @@ check_corr:
 		mf_00291 eta_00291 mf_1808 eta_1808 mf_1905 \
 		eta_1905 log10_mdot_1905 \
 		-internal ../data/kde_input_all
+
+# Concatenate smartly
+concat:
+	nline1=$(acol -read ../data/nomma2_0_out -nlines) \
+	@echo $nline1 
+	
 

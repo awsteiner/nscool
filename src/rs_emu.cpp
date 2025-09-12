@@ -224,11 +224,11 @@ mcmc_wrapper::mcmc_wrapper() {
   // This is the only way I could find, so that I can limit the mcmc parameters
   // depending on the flags
   no_nuclei = false;
-  no_prex = true;
-  no_sxrt = true;
-  no_ins = true;
-  no_qlmxb = true;
-  no_ligo = true;
+  no_prex = false;
+  no_sxrt = false;
+  no_ins = false;
+  no_qlmxb = false;
+  no_ligo = false;
 
   // std::cout << "ins, sxrt, qlmxb, prex, ligo: " << no_ins << " " << no_sxrt
   // << " " << no_qlmxb << " " << no_prex << " " << no_ligo << std::endl;
@@ -236,12 +236,12 @@ mcmc_wrapper::mcmc_wrapper() {
   if (!no_ins) {
     id.init_data(pvi, param_units);
   }
+  if (!no_qlmxb) {
+    nd.init_data(pvi, param_units);
+  }
   // std::cout << "pvi size after ins: " << pvi.size() << std::endl; exit(-1);
   if (!no_sxrt) {
     sd.init_data(pvi, param_units);
-  }
-  if (!no_qlmxb) {
-    nd.init_data(pvi, param_units);
   }
 
   nparam = pvi.size();
@@ -361,6 +361,17 @@ mcmc_wrapper::mcmc_wrapper() {
     }
   }
 
+  if (!no_qlmxb) {
+    // NSMR parameters
+    for (size_t i = 0; i < nd.list.size(); i++) {
+      nsmr &c = nd.list[i];
+      low[pvi[(string("mf_")) + c.name]] = 0.0;
+      high[pvi[(string("mf_")) + c.name]] = 1.0;
+      low[pvi[(string("eta_")) + c.name]] = 0.0;
+      high[pvi[(string("eta_")) + c.name]] = 1.0;
+    }
+  }
+
   if (!no_sxrt) {
     // SXRT parameters
     for (size_t i = 0; i < sd.list.size(); i++) {
@@ -376,17 +387,6 @@ mcmc_wrapper::mcmc_wrapper() {
       // if (c.L_ul) { low[pvi[(string("L_"))+c.name]]=0.0;
       // high[pvi[(string("L_"))+c.name]]=c.L;
       // }
-    }
-  }
-
-  if (!no_qlmxb) {
-    // NSMR parameters
-    for (size_t i = 0; i < nd.list.size(); i++) {
-      nsmr &c = nd.list[i];
-      low[pvi[(string("mf_")) + c.name]] = 0.0;
-      high[pvi[(string("mf_")) + c.name]] = 1.0;
-      low[pvi[(string("eta_")) + c.name]] = 0.0;
-      high[pvi[(string("eta_")) + c.name]] = 1.0;
     }
   }
 
@@ -702,6 +702,17 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     }
   }
 
+  if (!no_qlmxb) {
+    // NSMR parameters
+    for (size_t i = 0; i < nd.list.size(); i++) {
+      nsmr &c = nd.list[i];
+      init[pvi[((string) "mf_") + c.name]] = 0.4;
+      step[pvi[((string) "mf_") + c.name]] = 0.1;
+      init[pvi[((string) "eta_") + c.name]] = 0.1;
+      step[pvi[((string) "eta_") + c.name]] = 0.5;
+    }
+  }
+
   if (!no_sxrt) {
     // SXRT parameters
     for (size_t i = 0; i < sd.list.size(); i++) {
@@ -723,17 +734,6 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     }
   }
 
-  if (!no_qlmxb) {
-    // NSMR parameters
-    for (size_t i = 0; i < nd.list.size(); i++) {
-      nsmr &c = nd.list[i];
-      init[pvi[((string) "mf_") + c.name]] = 0.4;
-      step[pvi[((string) "mf_") + c.name]] = 0.1;
-      init[pvi[((string) "eta_") + c.name]] = 0.1;
-      step[pvi[((string) "eta_") + c.name]] = 0.5;
-    }
-  }
-
   // If initial points not already specified, use the 'init' array to specify
   // initial points
 
@@ -746,6 +746,7 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
   if (false) {
     // Reset initial points to that from IUFSU model
     eos_had_rmf rmf;
+    std::cout << "loading rmf EoS from file" << std::endl;
     o2scl_hdf::rmf_load(rmf, "IUFSU");
     mct.initial_points[0][pvi["b"]] = rmf.b;
     mct.initial_points[0][pvi["c"]] = rmf.c;
@@ -764,6 +765,10 @@ int mcmc_wrapper::mcmc(std::vector<std::string> &sv, bool itive_com) {
     mct.initial_points[0][pvi["a6"]] = rmf.a6;
     mct.initial_points[0][pvi["b2"]] = rmf.b2;
     mct.initial_points[0][pvi["b3"]] = rmf.b3;
+
+    std::cout << "pars[b]=" << rmf.b << std::endl; 
+    std::cout << "pars[c]=" << rmf.c << std::endl; 
+    std::cout << "pars[cr]=" << rmf.cr << std::endl; 
   }
 
   // Function objects for the MCMC class and for each OpenMP thread
